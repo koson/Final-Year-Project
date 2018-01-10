@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ArrayOfSensor xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="0" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="1" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="2" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="3" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="4" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="5" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="6" />
-  <Sensor Address="192.168.1.49" port="502" ID="1" SensorType="1" ChamberID="1" Register="7" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="0" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="1" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="2" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="3" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="4" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="5" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="6" />
+  <Sensor Address="169.254.228.122" port="502" ID="1" SensorType="2" ChamberID="1" Register="7" />
 </ArrayOfSensor>
