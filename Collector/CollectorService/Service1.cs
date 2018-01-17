@@ -67,7 +67,7 @@ namespace CollectorService
             pollTimer.Start();
 
             serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
-            SetServiceStatus(this.ServiceHandle, ref serviceStatus);
+            SetServiceStatus(this.ServiceHandle, ref serviceStatus);  
         }
 
         protected override void OnStop()
