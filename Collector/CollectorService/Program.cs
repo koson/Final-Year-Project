@@ -17,7 +17,7 @@ namespace CollectorService
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {
-                new Service1()
+                new Service1(null)
             };
             ServiceBase.Run(ServicesToRun);
         }

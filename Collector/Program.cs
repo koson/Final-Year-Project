@@ -5,30 +5,67 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Data.SqlClient;
 using System.Configuration;
+using System.Threading.Tasks;
 
 namespace Collector
 {
     class Program
     {
-        private List<Sensor> sensors = new List<Sensor>();
         private string databaseHost;
         private string databaseName;
         private string databaseUser;
         private string databasePassword;
         private string databaseTimeout;
         private int sensorPollInterval;
+        private Sensor[] sensors;
 
         static void Main(string[] args) //method only has test statements rn
         {
             Program program = new Program();
             program.ReadGeneralConfig();
-            program.ReadSensorConfig();
-            var result = program.PollSensor(program.sensors[0]);
-            program.SendToDatabase(program.sensors[0], result);
-            Console.Read();
+            program.sensors = program.ReadSensorConfig();
+            System.Timers.Timer pollTimer = new System.Timers.Timer();
+            pollTimer.Interval = program.sensorPollInterval;
+            pollTimer.Start();
+            pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(program.OnTimer);
+        }
+        public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
+        {
+            Task[] tasks = new Task[sensors.Length];
+            for (int i = 0; i < sensors.Length; i++)
+            {
+                Console.WriteLine("Value of i is: " + i.ToString());
+                Console.WriteLine(sensors[i].Address);
+                Sensor s = sensors[i];
+                tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
+            }
+            Task.WaitAll(tasks);
+            
         }
 
-        Tuple<double, double, String> PollSensor(Sensor sensor) //tuple allows to return multiple values
+        void start()
+        {
+
+            Task[] tasks = new Task[sensors.Length];
+            Console.WriteLine(tasks.Length);
+            for (int i = 0; i < sensors.Length; i++)
+            {
+                Console.WriteLine("Value of i is: " + i.ToString());
+                Console.WriteLine(sensors[i].Address);
+                Sensor s = sensors[i];
+                tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
+            }
+            Task.WaitAll(tasks);
+
+        }
+
+        void PollSensor(Sensor sensor)
+        {
+            var result = ReadSensor(sensor);
+            SendToDatabase(sensor, result);
+        }
+
+        Tuple<double, double, String> ReadSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
             double voltage = CalculateVoltage(CalculateRegisterValue(rawData));
@@ -38,24 +75,28 @@ namespace Collector
             return toReturn;
         }
 
-        ushort CalculateRegisterValue(byte[] rawData){ //calculates register value based off of bits in packet (uses little endian)
+        ushort CalculateRegisterValue(byte[] rawData)
+        { //calculates register value based off of bits in packet (uses little endian)
             ushort regValue;
             byte[] toAdd = new byte[2]; //always 2 bytes of data returned (modmux modules use 12 bits to send value)
-            toAdd = new byte[2]{rawData[10], rawData[9]}; //always 9th and 10th bit for modmux devices
+            toAdd = new byte[2] { rawData[10], rawData[9] }; //always 9th and 10th bit for modmux devices
             regValue = BitConverter.ToUInt16(toAdd, 0); //concatenate bits to form 16 bit word
             Console.WriteLine("Register value is: " + regValue.ToString()); //for test purposes
             return regValue;
         }
-          
-        double CalculateVoltage(ushort regValue) { //calculates voltage based off register value received
-            double voltage = regValue/409.5; //http://www.proconel.com/Industrial-Data-Acquisition-Products/MODBUS-TCP-I-O-Modules/PM8AI-V-ISO---8-Voltage-Input-Module-Fully-Isolate.aspx states that 819 = 2v
+
+        double CalculateVoltage(ushort regValue)
+        { //calculates voltage based off register value received
+            double voltage = regValue / 409.5; //http://www.proconel.com/Industrial-Data-Acquisition-Products/MODBUS-TCP-I-O-Modules/PM8AI-V-ISO---8-Voltage-Input-Module-Fully-Isolate.aspx states that 819 = 2v
             Console.WriteLine("Voltage is: " + voltage.ToString()); //for test purposes
             return voltage;
         }
-        
-        double GetSensorReading(double voltage, int sensorType){
+
+        double GetSensorReading(double voltage, int sensorType)
+        {
             double reading = 0;
-            switch (sensorType) {
+            switch (sensorType)
+            {
                 case 0:
                     reading = CalculateTemperature(voltage);
                     break;
@@ -72,7 +113,8 @@ namespace Collector
             return reading;
         }
 
-        double CalculateHumidity(double voltage) {
+        double CalculateHumidity(double voltage)
+        {
             double humidity = voltage * 10;
             Console.WriteLine("Humidity: " + humidity + "%"); //for test purposes
             return humidity;
@@ -92,7 +134,8 @@ namespace Collector
             return temperature;
         }
 
-        byte[] RequestData(Sensor sensor) { //sends request to a modmux device. returns modmux response
+        byte[] RequestData(Sensor sensor)
+        { //sends request to a modmux device. returns modmux response
             byte upperTransIdentifier = 0b0;
             byte transIdentifier = (byte)0;
             byte protocolIdentifier = 0b0;
@@ -100,7 +143,7 @@ namespace Collector
             byte lowerHeaderLength = 0b110;
             byte unitIdentifier = 0b1;
             byte functionCode = 0b100;
-            byte register = (byte) sensor.Register;
+            byte register = (byte)sensor.Register;
             TcpClient client = new TcpClient(sensor.Address, sensor.Port); //add try-catch
             NetworkStream nwStream = client.GetStream();
             byte[] request = new byte[] { upperTransIdentifier, transIdentifier, protocolIdentifier, protocolIdentifier,
@@ -112,7 +155,9 @@ namespace Collector
             return received;
         }
 
-        void ReadSensorConfig() { //reads configuration from the sensors table in the DB
+        Sensor[] ReadSensorConfig()
+        { //reads configuration from the sensors table in the DB
+            List<Sensor> sensors = new List<Sensor>();
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
             SqlConnection connection = new SqlConnection(connectionString);
@@ -127,10 +172,12 @@ namespace Collector
                     sensors.Add(new Sensor(returned.GetString(1), returned.GetInt32(6
                         ), returned.GetInt32(0), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(4)));
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
+            return sensors.ToArray();
         }
 
         void ReadGeneralConfig()
@@ -143,17 +190,19 @@ namespace Collector
                 databasePassword = ConfigurationManager.AppSettings.Get("DatabasePassword");
                 databaseTimeout = ConfigurationManager.AppSettings.Get("DatabaseConnectionTimeout");
                 sensorPollInterval = int.Parse(ConfigurationManager.AppSettings.Get("SensorPollInterval"));
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
         }
-        
-        void SendToDatabase(Sensor sensor, Tuple<double,double, String> result) {
+
+        void SendToDatabase(Sensor sensor, Tuple<double, double, String> result)
+        {
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
             SqlConnection connection = new SqlConnection(connectionString);
-            
+
             try
             {
                 connection.Open();
@@ -163,11 +212,11 @@ namespace Collector
                 insertData.ExecuteNonQuery();
                 connection.Close();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
             }
         }
-    }          
+    }
 }
 

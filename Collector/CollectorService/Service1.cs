@@ -20,17 +20,17 @@ namespace CollectorService
     {
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
-        private System.ComponentModel.IContainer components;
+       // private System.ComponentModel.IContainer components;
         private System.Diagnostics.EventLog eventLog;
         private int eventID = 1;
-        private List<Sensor> sensors = new List<Sensor>();
         private string databaseHost;
         private string databaseName;
         private string databaseUser;
         private string databasePassword;
         private string databaseTimeout;
         private int sensorPollInterval;
-
+        private Sensor[] sensors;
+        private System.Timers.Timer pollTimer;
         public Service1(string[] args)
         {
             InitializeComponent();
@@ -59,15 +59,10 @@ namespace CollectorService
 
             eventLog.WriteEntry("Sensorcom collector starting", EventLogEntryType.Information, eventID++);
             ReadGeneralConfig();
-            //create thread for each sensor in sensors
-            //use onTimer to poll all sensors every interval
-            System.Timers.Timer pollTimer = new System.Timers.Timer();
+            sensors = ReadSensorConfig();
+            pollTimer = new System.Timers.Timer();
             pollTimer.Interval = sensorPollInterval;
-            pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnTimer);
-            pollTimer.Start();
-
-            serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
-            SetServiceStatus(this.ServiceHandle, ref serviceStatus);  
+            WhileRunning();
         }
 
         protected override void OnStop()
@@ -78,14 +73,31 @@ namespace CollectorService
             SetServiceStatus(this.ServiceHandle, ref serviceStatus);
 
             eventLog.WriteEntry("Sensorcom collector stopping", EventLogEntryType.Information, eventID++);
-
+            pollTimer.Stop();
             serviceStatus.dwCurrentState = ServiceState.SERVICE_STOPPED;
             SetServiceStatus(this.ServiceHandle, ref serviceStatus);
         }
 
         public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
-            //poll sensor again
+            Task[] tasks = new Task[sensors.Length];
+            for (int i = 0; i < sensors.Length; i++)
+            {
+                Console.WriteLine(sensors[i].Address);
+                Sensor s = sensors[i];
+                tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
+            }
+            Task.WaitAll(tasks);
+        }
+
+        public void WhileRunning()
+        {
+            ServiceStatus serviceStatus = new ServiceStatus();
+            serviceStatus.dwCurrentState = ServiceState.SERVICE_RUNNING;
+            serviceStatus.dwWaitHint = 100000;
+            SetServiceStatus(this.ServiceHandle, ref serviceStatus);
+            pollTimer.Start();
+            pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnTimer);
         }
         public enum ServiceState
         {
@@ -110,7 +122,13 @@ namespace CollectorService
             public int dwWaitHint;
         };
 
-        Tuple<double, double, String> PollSensor(Sensor sensor) //tuple allows to return multiple values
+        void PollSensor(Sensor sensor)
+        {
+            var result = ReadSensor(sensor);
+            SendToDatabase(sensor, result);
+        }
+
+        Tuple<double, double, String> ReadSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
             double voltage = CalculateVoltage(CalculateRegisterValue(rawData));
@@ -126,14 +144,12 @@ namespace CollectorService
             byte[] toAdd = new byte[2]; //always 2 bytes of data returned (modmux modules use 12 bits to send value)
             toAdd = new byte[2] { rawData[10], rawData[9] }; //always 9th and 10th bit for modmux devices
             regValue = BitConverter.ToUInt16(toAdd, 0); //concatenate bits to form 16 bit word
-            Console.WriteLine("Register value is: " + regValue.ToString()); //for test purposes
             return regValue;
         }
 
         double CalculateVoltage(ushort regValue)
         { //calculates voltage based off register value received
             double voltage = regValue / 409.5; //http://www.proconel.com/Industrial-Data-Acquisition-Products/MODBUS-TCP-I-O-Modules/PM8AI-V-ISO---8-Voltage-Input-Module-Fully-Isolate.aspx states that 819 = 2v
-            Console.WriteLine("Voltage is: " + voltage.ToString()); //for test purposes
             return voltage;
         }
 
@@ -161,7 +177,6 @@ namespace CollectorService
         double CalculateHumidity(double voltage)
         {
             double humidity = voltage * 10;
-            Console.WriteLine("Humidity: " + humidity + "%"); //for test purposes
             return humidity;
         }
 
@@ -200,15 +215,17 @@ namespace CollectorService
                 received = new byte[client.ReceiveBufferSize];
                 int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
                 client.Close();
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while reading data from a sensor. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
             }
             return received;
         }
 
-        void ReadSensorConfig()
+        Sensor[] ReadSensorConfig()
         { //reads configuration from the sensors table in the DB
+            List<Sensor> sensors = new List<Sensor>();
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
             SqlConnection connection = new SqlConnection(connectionString);
@@ -223,13 +240,20 @@ namespace CollectorService
                     sensors.Add(new Sensor(returned.GetString(1), returned.GetInt32(6
                         ), returned.GetInt32(0), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(4)));
                 }
+                connection.Close();
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
                 eventLog.WriteEntry("An error occured while reading sensor information from database. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
             }
             eventLog.WriteEntry("successfully read sensor configuration from database", EventLogEntryType.Information, eventID++);
+            Sensor[] sensorArray = sensors.ToArray();
+            if(sensorArray.Length == 0)
+            {
+                eventLog.WriteEntry("No sensors to poll. stopping", EventLogEntryType.Error, eventID++);
+                throw new System.NullReferenceException();
+            }
+            return sensorArray;
         }
 
         void ReadGeneralConfig()
@@ -246,7 +270,6 @@ namespace CollectorService
             catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while reading general configuration. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
-                Console.WriteLine(e.ToString());
             }
             eventLog.WriteEntry("successfully read general configuration", EventLogEntryType.Information, eventID++);
         }
@@ -268,7 +291,6 @@ namespace CollectorService
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
                 eventLog.WriteEntry("An error occured while sending information to the database. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
             }
         }
