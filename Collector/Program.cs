@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 using System.Data.SqlClient;
 using System.Configuration;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Collector
 {
@@ -28,6 +29,7 @@ namespace Collector
             pollTimer.Interval = program.sensorPollInterval;
             pollTimer.Start();
             pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(program.OnTimer);
+            Console.ReadLine();
         }
         public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
@@ -39,24 +41,6 @@ namespace Collector
                 Sensor s = sensors[i];
                 tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
             }
-            Task.WaitAll(tasks);
-            
-        }
-
-        void start()
-        {
-
-            Task[] tasks = new Task[sensors.Length];
-            Console.WriteLine(tasks.Length);
-            for (int i = 0; i < sensors.Length; i++)
-            {
-                Console.WriteLine("Value of i is: " + i.ToString());
-                Console.WriteLine(sensors[i].Address);
-                Sensor s = sensors[i];
-                tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
-            }
-            Task.WaitAll(tasks);
-
         }
 
         void PollSensor(Sensor sensor)
@@ -68,10 +52,12 @@ namespace Collector
         Tuple<double, double, String> ReadSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
-            double voltage = CalculateVoltage(CalculateRegisterValue(rawData));
-            double sensorReading = GetSensorReading(voltage, sensor.SensorType);
+            double regValue = CalculateRegisterValue(rawData);
+            //double voltage = CalculateVoltage(regValue);
+            double sensorReading = GetSensorReading(regValue, sensor);
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
-            var toReturn = Tuple.Create(voltage, sensorReading, timestamp);
+            Console.WriteLine(timestamp);
+            var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
             return toReturn;
         }
 
@@ -85,26 +71,26 @@ namespace Collector
             return regValue;
         }
 
-        double CalculateVoltage(ushort regValue)
+        double CalculateVoltage(double regValue)
         { //calculates voltage based off register value received
             double voltage = regValue / 409.5; //http://www.proconel.com/Industrial-Data-Acquisition-Products/MODBUS-TCP-I-O-Modules/PM8AI-V-ISO---8-Voltage-Input-Module-Fully-Isolate.aspx states that 819 = 2v
             Console.WriteLine("Voltage is: " + voltage.ToString()); //for test purposes
             return voltage;
         }
 
-        double GetSensorReading(double voltage, int sensorType)
+        double GetSensorReading(double regValue, Sensor s)
         {
             double reading = 0;
-            switch (sensorType)
+            switch (s.SensorType)
             {
                 case 0:
-                    reading = CalculateTemperature(voltage);
+                    reading = CalculateTemperature(regValue);
                     break;
                 case 1:
-                    reading = CalculatePressure(voltage);
+                    reading = CalculatePressure(regValue, s.Scale, s.Offset);
                     break;
                 case 2:
-                    reading = CalculateHumidity(voltage);
+                    reading = CalculateHumidity(regValue, s.Scale, s.Offset);
                     break;
                 default:
                     //unknown - throw error
@@ -113,24 +99,24 @@ namespace Collector
             return reading;
         }
 
-        double CalculateHumidity(double voltage)
+        double CalculateHumidity(double regValue, double scale, double offset)
         {
-            double humidity = voltage * 10;
-            Console.WriteLine("Humidity: " + humidity + "%"); //for test purposes
+            double humidity = (regValue*scale) + offset;
+            Console.WriteLine("Humidity is: " + humidity);
             return humidity;
         }
 
-        double CalculatePressure(double voltage)
+        double CalculatePressure(double regValue, double scale, double offset)
         {
-            //needs equation
-            double pressure = 0;
+            double pressure = (regValue*scale) + offset;
+            Console.WriteLine("pressure is: " + pressure);
             return pressure;
         }
 
-        double CalculateTemperature(double voltage)
+        double CalculateTemperature(double regValue)
         {
-            //needs equation
-            double temperature = 0;
+            double temperature = regValue/10;
+            Console.WriteLine("Temperature is: " + temperature);
             return temperature;
         }
 
@@ -143,13 +129,14 @@ namespace Collector
             byte lowerHeaderLength = 0b110;
             byte unitIdentifier = 0b1;
             byte functionCode = 0b100;
+            byte[] received;
             byte register = (byte)sensor.Register;
             TcpClient client = new TcpClient(sensor.Address, sensor.Port); //add try-catch
             NetworkStream nwStream = client.GetStream();
             byte[] request = new byte[] { upperTransIdentifier, transIdentifier, protocolIdentifier, protocolIdentifier,
-                upperHeaderLength, lowerHeaderLength, unitIdentifier, functionCode, 0b0, register, 0b0, 0b1};
+        upperHeaderLength, lowerHeaderLength, unitIdentifier, functionCode, 0b0, register, 0b0, 0b1};
             nwStream.Write(request, 0, request.Length);
-            byte[] received = new byte[client.ReceiveBufferSize];
+            received = new byte[client.ReceiveBufferSize];
             int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
             client.Close();
             return received;
@@ -169,9 +156,9 @@ namespace Collector
                 var returned = getSensors.ExecuteReader();
                 while (returned.Read())
                 {
-                    sensors.Add(new Sensor(returned.GetString(1), returned.GetInt32(6
-                        ), returned.GetInt32(0), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(4)));
+                    sensors.Add(new Sensor(returned.GetInt32(0), returned.GetString(1), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(5), returned.GetDouble(6), returned.GetDouble(7), returned.GetInt32(8)));
                 }
+                connection.Close();
             }
             catch (Exception e)
             {
@@ -206,7 +193,7 @@ namespace Collector
             try
             {
                 connection.Open();
-                String insertStatement = "INSERT INTO Data_Record (Computed_Value, Voltage_Reading, Record_Time, Sensor_ID) " +
+                String insertStatement = "INSERT INTO Data_Record (Computed_Value, Register_Value, Record_Time, Sensor_ID) " +
                                      "Values ('" + result.Item2 + "','" + result.Item1 + "','" + result.Item3 + "'," + sensor.ID + ")";
                 SqlCommand insertData = new SqlCommand(insertStatement, connection);
                 insertData.ExecuteNonQuery();

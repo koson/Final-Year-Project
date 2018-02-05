@@ -131,10 +131,10 @@ namespace CollectorService
         Tuple<double, double, String> ReadSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
-            double voltage = CalculateVoltage(CalculateRegisterValue(rawData));
-            double sensorReading = GetSensorReading(voltage, sensor.SensorType);
+            double regValue = CalculateRegisterValue(rawData);
+            double sensorReading = GetSensorReading(regValue, sensor);
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
-            var toReturn = Tuple.Create(voltage, sensorReading, timestamp);
+            var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
             return toReturn;
         }
 
@@ -153,19 +153,19 @@ namespace CollectorService
             return voltage;
         }
 
-        double GetSensorReading(double voltage, int sensorType)
+        double GetSensorReading(double regValue, Sensor sensor)
         {
             double reading = 0;
-            switch (sensorType)
+            switch (sensor.SensorType)
             {
                 case 0:
-                    reading = CalculateTemperature(voltage);
+                    reading = CalculateTemperature(regValue);
                     break;
                 case 1:
-                    reading = CalculatePressure(voltage);
+                    reading = CalculatePressure(regValue, sensor.Scale, sensor.Offset);
                     break;
                 case 2:
-                    reading = CalculateHumidity(voltage);
+                    reading = CalculateHumidity(regValue, sensor.Scale, sensor.Offset);
                     break;
                 default:
                     //unknown - throw error
@@ -174,23 +174,23 @@ namespace CollectorService
             return reading;
         }
 
-        double CalculateHumidity(double voltage)
+        double CalculateHumidity(double regValue, double scale, double offset)
         {
-            double humidity = voltage * 10;
+            //(regValue * scale) + offset
+            double humidity = (regValue*scale) + offset;
             return humidity;
         }
 
-        double CalculatePressure(double voltage)
+        double CalculatePressure(double regValue, double scale, double offset)
         {
-            //needs equation
-            double pressure = 0;
+            //(regValue * scale) + offset
+            double pressure = (regValue*scale) + offset;
             return pressure;
         }
 
-        double CalculateTemperature(double voltage)
+        double CalculateTemperature(double regValue)
         {
-            //needs equation
-            double temperature = 0;
+            double temperature = regValue/10;
             return temperature;
         }
 
@@ -237,8 +237,7 @@ namespace CollectorService
                 var returned = getSensors.ExecuteReader();
                 while (returned.Read())
                 {
-                    sensors.Add(new Sensor(returned.GetString(1), returned.GetInt32(6
-                        ), returned.GetInt32(0), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(4)));
+                    sensors.Add(new Sensor(returned.GetInt32(0), returned.GetString(1), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(5), returned.GetDouble(6), returned.GetDouble(7), returned.GetInt32(8)));
                 }
                 connection.Close();
             }
@@ -283,7 +282,7 @@ namespace CollectorService
             try
             {
                 connection.Open();
-                String insertStatement = "INSERT INTO Data_Record (Computed_Value, Voltage_Reading, Record_Time, Sensor_ID) " +
+                String insertStatement = "INSERT INTO Data_Record (Computed_Value, Register_Value, Record_Time, Sensor_ID) " +
                                      "Values ('" + result.Item2 + "','" + result.Item1 + "','" + result.Item3 + "'," + sensor.ID + ")";
                 SqlCommand insertData = new SqlCommand(insertStatement, connection);
                 insertData.ExecuteNonQuery();

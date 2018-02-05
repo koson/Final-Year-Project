@@ -9,32 +9,18 @@ public class Sensor
     public int SensorType { get; set; }
     public int ChamberID { get; set; }
     public int Register { get; set; }
-    public double LastReading { get; set; }
-    public double LastVoltage { get; set; }
+    public double Scale { get; set; }
+    public double Offset { get; set; }
 
-    public Sensor()
+    public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID)
     {
-
-    }
-
-	public Sensor(String newAddress, int newPort, int newID, int newType, int newChamberID, int newRegister)
-	{
+        ID = newID;
         Address = newAddress;
         Port = newPort;
-        ID = newID;
-        SensorType = newType;
-        ChamberID = newChamberID;
         Register = newRegister;
-        LastReading = 0;
-	}
-    public Sensor(String newAddress, int newID, int newType, int newChamberID, int newRegister)
-    {
-        Address = newAddress;
-        Port = 502;
-        ID = newID;
-        SensorType = newType;
+        SensorType = newSensorType;
+        Scale = newScale;
+        Offset = newOffset;
         ChamberID = newChamberID;
-        Register = newRegister;
-        LastReading = 0;
     }
 }
