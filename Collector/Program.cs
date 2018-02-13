@@ -156,7 +156,15 @@ namespace Collector
                 var returned = getSensors.ExecuteReader();
                 while (returned.Read())
                 {
-                    sensors.Add(new Sensor(returned.GetInt32(0), returned.GetString(1), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(5), returned.GetDouble(6), returned.GetDouble(7), returned.GetInt32(8)));
+                    sensors.Add(new Sensor(
+                        returned.GetInt32(0), 
+                        returned.GetString(1), 
+                        returned.GetInt32(2), 
+                        returned.GetInt32(3), 
+                        returned.GetInt32(5), 
+                        returned.GetDouble(6), 
+                        returned.GetDouble(7), 
+                        returned.GetInt32(8)));
                 }
                 connection.Close();
             }
