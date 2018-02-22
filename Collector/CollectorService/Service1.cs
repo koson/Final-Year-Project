@@ -232,12 +232,21 @@ namespace CollectorService
             try
             {
                 connection.Open();
-                string query = "SELECT * FROM Sensor WHERE Calibration_Sensor=0;"; //select all sensors not used for calibration
+                sstring query = "SELECT * FROM Sensor INNER JOIN Modbus_Info ON Sensor.Modbus_Info_ID=Modbus_Info.Modbus_Info_ID WHERE Sensor.Calibration_Sensor=0;"; //select all sensors not used for calibration
                 SqlCommand getSensors = new SqlCommand(query, connection);
                 var returned = getSensors.ExecuteReader();
                 while (returned.Read())
                 {
-                    sensors.Add(new Sensor(returned.GetInt32(0), returned.GetString(1), returned.GetInt32(2), returned.GetInt32(3), returned.GetInt32(5), returned.GetDouble(6), returned.GetDouble(7), returned.GetInt32(8)));
+                    sensors.Add(new Sensor(
+                        returned.GetInt32(0),
+                        returned.GetString(7),
+                        returned.GetInt32(8),
+                        returned.GetInt32(9),
+                        returned.GetInt32(3),
+                        returned.GetDouble(10),
+                        returned.GetDouble(11),
+                        returned.GetInt32(4),
+                        returned.GetString(1)));
                 }
                 connection.Close();
             }

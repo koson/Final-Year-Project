@@ -2,7 +2,7 @@
 
 public class Sensor
 {
-    public string Address { get; set; }
+    public String Address { get; set; }
     public int Port { get; set; }
     public int ID { get; set; }
     public int SensorType { get; set; }
@@ -10,8 +10,10 @@ public class Sensor
     public int Register { get; set; }
     public double Scale { get; set; }
     public double Offset { get; set; }
+    public String Description { get; set; }
+    public String Interface{ get; set; }
 
-	public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID)
+    public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID, String newDescription, String newInterface)
 	{
         ID = newID;
         Address = newAddress;
@@ -21,5 +23,7 @@ public class Sensor
         Scale = newScale;
         Offset = newOffset;
         ChamberID = newChamberID;
+        Description = newDescription;
+        Interface = newInterface;
 	}
 }

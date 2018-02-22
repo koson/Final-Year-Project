@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Xml.Serialization;
 
 public class Sensor
 {
@@ -11,8 +10,9 @@ public class Sensor
     public int Register { get; set; }
     public double Scale { get; set; }
     public double Offset { get; set; }
+    public string Description { get; set; }
 
-    public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID)
+    public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID, string newDescription)
     {
         ID = newID;
         Address = newAddress;
@@ -22,5 +22,6 @@ public class Sensor
         Scale = newScale;
         Offset = newOffset;
         ChamberID = newChamberID;
+        Description = newDescription;
     }
 }

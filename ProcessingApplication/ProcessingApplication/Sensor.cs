@@ -25,8 +25,10 @@ namespace ProcessingApplication
         public double Scale { get; set; }
         [XmlAttribute("Offset")]
         public double Offset { get; set; }
+        [XmlAttribute("Description")]
+        public string Description { get; set; }
 
-        public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID)
+        public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID, string newDescription)
         {
             ID = newID;
             Address = newAddress;
@@ -36,6 +38,7 @@ namespace ProcessingApplication
             Scale = newScale;
             Offset = newOffset;
             ChamberID = newChamberID;
+            Description = newDescription;
         }
 
         public Sensor()

@@ -36,14 +36,16 @@ namespace Collector
             Task[] tasks = new Task[sensors.Length];
             for (int i = 0; i < sensors.Length; i++)
             {
-                Console.WriteLine("Value of i is: " + i.ToString());
                 Console.WriteLine(sensors[i].Address);
                 Sensor s = sensors[i];
-                tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
+                if(s.Interface == "Modbus")
+                {
+                    tasks[i] = Task.Factory.StartNew(() => PollModbusSensor(s));
+                }
             }
         }
 
-        void PollSensor(Sensor sensor)
+        void PollModbusSensor(Sensor sensor)
         {
             var result = ReadSensor(sensor);
             SendToDatabase(sensor, result);
@@ -53,7 +55,6 @@ namespace Collector
         {
             byte[] rawData = RequestData(sensor);
             double regValue = CalculateRegisterValue(rawData);
-            //double voltage = CalculateVoltage(regValue);
             double sensorReading = GetSensorReading(regValue, sensor);
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
             Console.WriteLine(timestamp);
@@ -148,25 +149,38 @@ namespace Collector
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
             SqlConnection connection = new SqlConnection(connectionString);
+            SqlConnection connection2 = new SqlConnection(connectionString);
             try
             {
                 connection.Open();
-                string query = "SELECT * FROM Sensor WHERE Calibration_Sensor=0;"; //select all sensors not used for calibration
+                connection2.Open();
+                string query = "SELECT * FROM Sensor WHERE Calibration_Sensor=0;";
                 SqlCommand getSensors = new SqlCommand(query, connection);
                 var returned = getSensors.ExecuteReader();
-                while (returned.Read())
+                while(returned.Read())
                 {
-                    sensors.Add(new Sensor(
-                        returned.GetInt32(0), 
-                        returned.GetString(1), 
-                        returned.GetInt32(2), 
-                        returned.GetInt32(3), 
-                        returned.GetInt32(5), 
-                        returned.GetDouble(6), 
-                        returned.GetDouble(7), 
-                        returned.GetInt32(8)));
+                    if(returned.GetInt32(5) != 0){ //if it has a modbus connection entry - get it
+                        string query2 = "SELECT * FROM Modbus_Info WHERE Modbus_Info_ID=" + returned.GetInt32(5) + ";";
+                        SqlCommand getSensors2 = new SqlCommand(query2, connection2);
+                        var returned2 = getSensors2.ExecuteReader();
+                        while (returned2.Read())
+                        {
+                            sensors.Add(new Sensor(
+                                returned.GetInt32(0), 
+                                returned2.GetString(1), 
+                                returned2.GetInt32(2), 
+                                returned2.GetInt32(3), 
+                                returned.GetInt32(3), 
+                                returned2.GetDouble(4), 
+                                returned2.GetDouble(5), 
+                                returned.GetInt32(4),
+                                returned.GetString(1),
+                                "Modbus"));
+                        }
+                    }
                 }
                 connection.Close();
+                connection2.Close();
             }
             catch (Exception e)
             {

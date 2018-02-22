@@ -24,7 +24,7 @@ namespace ProcessingApplication
         {
             Program p = new Program();
             p.GetEnvironment();
-            string s = p.ProduceGraphData(p.chambers[0], DateTime.Parse("2018-01-31 12:52:00"), DateTime.Parse("2018-01-31 12:54:00"));
+            string s = p.ProduceGraphData(p.chambers[0], DateTime.Parse("2018-02-21 05:50:10"), DateTime.Parse("2018-02-21 05:56:03"));
             Console.Write(s);
             Console.Read();
            /* if(args[0] == "getenv")
@@ -55,23 +55,35 @@ namespace ProcessingApplication
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
             SqlConnection connection = new SqlConnection(connectionString);
+            SqlConnection connection2 = new SqlConnection(connectionString);
             try
             {
                 connection.Open();
-                string query = "SELECT * FROM Sensor WHERE Chamber_ID=" + chamber.ID + ";";
+                connection2.Open();
+                string query = "SELECT * FROM Sensor WHERE Sensor.Chamber_ID=" + chamber.ID + ";";
                 SqlCommand getData = new SqlCommand(query, connection);
                 var returned = getData.ExecuteReader();
                 while (returned.Read())
                 {
-                    sensors.Add(new Sensor(
-                        returned.GetInt32(0),
-                        returned.GetString(1),
-                        returned.GetInt32(2),
-                        returned.GetInt32(3),
-                        returned.GetInt32(5),
-                        returned.GetDouble(6),
-                        returned.GetDouble(7),
-                        returned.GetInt32(8)));
+                    if (returned.GetInt32(5) != 0)
+                    { //if it has a modbus connection entry - get it
+                        string query2 = "SELECT * FROM Modbus_Info WHERE Modbus_Info_ID=" + returned.GetInt32(5) + ";";
+                        SqlCommand getSensors2 = new SqlCommand(query2, connection2);
+                        var returned2 = getSensors2.ExecuteReader();
+                        while (returned2.Read())
+                        {
+                            sensors.Add(new Sensor(
+                                returned.GetInt32(0),
+                                returned2.GetString(1),
+                                returned2.GetInt32(2),
+                                returned2.GetInt32(3),
+                                returned.GetInt32(3),
+                                returned2.GetDouble(4),
+                                returned2.GetDouble(5),
+                                returned.GetInt32(4),
+                                returned.GetString(1)));
+                        }
+                    }
                 }
                 connection.Close();
             }
@@ -172,22 +184,22 @@ namespace ProcessingApplication
 
         String ProduceGraphData(Chamber c, DateTime start, DateTime end)
         {
-            DataSet[] allTempSensors = new DataSet[c.GetNumberOfSensors(0)];
-            DataSet[] allPressureSensors = new DataSet[c.GetNumberOfSensors(1)];
-            DataSet[] allHumiditySensors = new DataSet[c.GetNumberOfSensors(2)];
+            DataSet temperatureValues = new DataSet();
+            DataSet pressureValues = new DataSet();
+            DataSet humidityValues = new DataSet();
 
             for (int i = 0; i < c.sensors.Length; i++)
             {
                 switch (c.sensors[i].SensorType)
                 {
                     case 0: //temperature
-                        allTempSensors[i] = GetDataForSensor(c.sensors[i], start, end);
+                        temperatureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end), 0);
                         break;
                     case 1: //pressure
-                        allPressureSensors[i] = GetDataForSensor(c.sensors[i], start, end);
+                        pressureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end),0);
                         break;
                     case 2: //humidity
-                        allHumiditySensors[i] = GetDataForSensor(c.sensors[i], start, end);
+                        humidityValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end),0);
                         break;
                     default: //throw error
                         throw new Exception();
@@ -195,35 +207,26 @@ namespace ProcessingApplication
                 }
             }
 
-            DataSet[] finalValues = new DataSet[3]; //3 sets of mean values to plot on graph
-            if(allTempSensors.Length != 0)
-            {
-                finalValues[0] = ProduceMeanValues(allTempSensors);
-            }
-            if(allHumiditySensors.Length != 0)
-            {
-                finalValues[1] = ProduceMeanValues(allHumiditySensors);
-            }
-            if(allPressureSensors.Length != 0)
-            {
-                finalValues[2] = ProduceMeanValues(allPressureSensors);
-            } 
+            DataSet[] finalValues = new DataSet[3]; //3 sets of values to plot on graph
+            finalValues[0] = temperatureValues;
+            finalValues[1] = pressureValues;
+            finalValues[2] = humidityValues; 
 
             //steps
             //1. with given data, select all sensors and all data for the sensors within the timerange - done
             //2. produce calibrated data for each data set by getting latest calibration records for each sensor
-            //3. produce one piece of data for each time interval (one temp, one pressure, one humidity) - done(ish)
             //4. serialize information using buildXML - done
             //5. return the XML - done
             String serialized = BuildXML(finalValues);
             return serialized;
         }
 
-        DataSet ProduceMeanValues(DataSet[] dataToAverage) //mean of all values for certain sensor type per minute within the time range
+        //change to allow custom time intervals to average (based off user input in GUI)?
+        DataSet ProduceMeanValues(DataSet dataToAverage, int timeInterval) //mean of all values for certain sensor type per minute within the time range
         {
             DataSet meanValues = new DataSet();
-            DateTime earliestTime = dataToAverage[0].Data[0].Timestamp.AddSeconds(-(dataToAverage[0].Data[0].Timestamp.Second)); //earliest whole minute
-            DateTime latestTime = dataToAverage[0].Data[dataToAverage[0].Data.Length-1].Timestamp.AddSeconds(60- dataToAverage[0].Data[dataToAverage[0].Data.Length - 1].Timestamp.Second); //latest whole minute
+            DateTime earliestTime = dataToAverage.Data[0].Timestamp.AddSeconds(-(dataToAverage.Data[0].Timestamp.Second)); //earliest whole minute
+            DateTime latestTime = dataToAverage.Data[dataToAverage.Data.Length-1].Timestamp.AddSeconds(60- dataToAverage.Data[dataToAverage.Data.Length - 1].Timestamp.Second); //latest whole minute
             TimeSpan minutesDifference = latestTime.Subtract(earliestTime); //amount of minutes in between
             Console.WriteLine(earliestTime);
             Console.WriteLine(latestTime);
@@ -232,15 +235,12 @@ namespace ProcessingApplication
             for(int i = 0; i < minutesDifference.TotalMinutes; i++) //calculate mean value for each minute
             {
                 List<Double> valuesToMean = new List<Double>();
-                for (int j = 0; j < dataToAverage.Length; j++)
+                for (int j = 0; j < dataToAverage.Data.Length; j++)
                 {
-                    for (int k = 0; k < dataToAverage[j].Data.Length; k++)
+                    if (dataToAverage.Data[j].Timestamp < (earliestTime.AddMinutes(i+1)) && dataToAverage.Data[j].Timestamp >= earliestTime.AddMinutes(i)) //search all data for each sensor and add any within minute range to valuesToMean
                     {
-                        if (dataToAverage[j].Data[k].Timestamp < (earliestTime.AddMinutes(i+1)) && dataToAverage[j].Data[k].Timestamp >= earliestTime.AddMinutes(i)) //search all data for each sensor and add any within minute range to valuesToMean
-                        {
-                            Console.WriteLine(dataToAverage[j].Data[k].Timestamp + ": " + dataToAverage[j].Data[k].Reading);
-                            valuesToMean.Add(dataToAverage[j].Data[k].Reading);
-                        }
+                        Console.WriteLine(dataToAverage.Data[j].Timestamp + ": " + dataToAverage.Data[j].Reading);
+                        valuesToMean.Add(dataToAverage.Data[j].Reading);
                     }
                 }
 
