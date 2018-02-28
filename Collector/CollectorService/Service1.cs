@@ -85,7 +85,10 @@ namespace CollectorService
             {
                 Console.WriteLine(sensors[i].Address);
                 Sensor s = sensors[i];
-                tasks[i] = Task.Factory.StartNew(() => PollSensor(s));
+                if(s.Interface == "Modbus")
+                {
+                    tasks[i] = Task.Factory.StartNew(() => PollModbusSensor(s));
+                }
             }
             Task.WaitAll(tasks);
         }
@@ -239,7 +242,7 @@ namespace CollectorService
                 var returned = getSensors.ExecuteReader();
                 while(returned.Read())
                 {
-                    if(returned.GetInt32(5) != 0){ //if it has a modbus connection entry - get it
+                    if(returned.GetInt32(5) != 0){ //if it has a modbus connection entry - get it and class it as a modbus sensor
                         string query2 = "SELECT * FROM Modbus_Info WHERE Modbus_Info_ID=" + returned.GetInt32(5) + ";";
                         SqlCommand getSensors2 = new SqlCommand(query2, connection2);
                         var returned2 = getSensors2.ExecuteReader();

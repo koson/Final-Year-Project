@@ -47,15 +47,15 @@ namespace Collector
 
         void PollModbusSensor(Sensor sensor)
         {
-            var result = ReadSensor(sensor);
+            var result = ReadModbusSensor(sensor);
             SendToDatabase(sensor, result);
         }
 
-        Tuple<double, double, String> ReadSensor(Sensor sensor) //tuple allows to return multiple values
+        Tuple<double, double, String> ReadModbusSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
             double regValue = CalculateRegisterValue(rawData);
-            double sensorReading = GetSensorReading(regValue, sensor);
+            double sensorReading = GetModbusSensorReading(regValue, sensor);
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
             Console.WriteLine(timestamp);
             var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
@@ -79,7 +79,7 @@ namespace Collector
             return voltage;
         }
 
-        double GetSensorReading(double regValue, Sensor s)
+        double GetModbusSensorReading(double regValue, Sensor s)
         {
             double reading = 0;
             switch (s.SensorType)

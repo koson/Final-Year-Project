@@ -26,6 +26,9 @@ namespace ProcessingApplication
             p.GetEnvironment();
             string s = p.ProduceGraphData(p.chambers[0], DateTime.Parse("2018-02-21 05:50:10"), DateTime.Parse("2018-02-21 05:56:03"));
             Console.Write(s);
+            //p.AddModbusSensor("169.254.228.122", 504, 0, 1, 1, 0, 0, "Test add sensor");
+            //String sensors = p.BuildXML(p.GetSensorsForChamber(p.chambers[0]));
+            //Console.WriteLine(sensors);
             Console.Read();
            /* if(args[0] == "getenv")
             {
@@ -83,6 +86,8 @@ namespace ProcessingApplication
                                 returned.GetInt32(4),
                                 returned.GetString(1)));
                         }
+                        returned2.Close();
+                        getSensors2.Dispose();
                     }
                 }
                 connection.Close();
@@ -193,13 +198,16 @@ namespace ProcessingApplication
                 switch (c.sensors[i].SensorType)
                 {
                     case 0: //temperature
-                        temperatureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end), 0);
+                        temperatureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
+                        temperatureValues.SensorID = c.sensors[i].ID;
                         break;
                     case 1: //pressure
-                        pressureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end),0);
+                        pressureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
+                        pressureValues.SensorID = c.sensors[i].ID;
                         break;
                     case 2: //humidity
-                        humidityValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end),0);
+                        humidityValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
+                        humidityValues.SensorID = c.sensors[i].ID;
                         break;
                     default: //throw error
                         throw new Exception();
@@ -222,7 +230,7 @@ namespace ProcessingApplication
         }
 
         //change to allow custom time intervals to average (based off user input in GUI)?
-        DataSet ProduceMeanValues(DataSet dataToAverage, int timeInterval) //mean of all values for certain sensor type per minute within the time range
+        DataSet ProduceMeanValues(DataSet dataToAverage) //mean of all values for certain sensor type per minute within the time range
         {
             DataSet meanValues = new DataSet();
             DateTime earliestTime = dataToAverage.Data[0].Timestamp.AddSeconds(-(dataToAverage.Data[0].Timestamp.Second)); //earliest whole minute
@@ -255,6 +263,58 @@ namespace ProcessingApplication
         void ExportToExcel()
         {
             //export result of ProduceGraphData() to an excel sheet
+        }
+
+        void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description) //add sensor to database
+        {
+            string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
+                + databaseUser + "; Password =" + databasePassword;
+            SqlConnection connection = new SqlConnection(connectionString);
+            SqlParameter[] parameters = new SqlParameter[8];
+            parameters[0] = new SqlParameter("@IP", System.Data.SqlDbType.VarChar);
+            parameters[0].Value = address;
+            parameters[1] = new SqlParameter("@Port", System.Data.SqlDbType.Int);
+            parameters[1].Value = port;
+            parameters[2] = new SqlParameter("@Type", System.Data.SqlDbType.Int);
+            parameters[2].Value = type;
+            parameters[3] = new SqlParameter("@ChamberID", System.Data.SqlDbType.Int);
+            parameters[3].Value = chamberID;
+            parameters[4] = new SqlParameter("@Register", System.Data.SqlDbType.Int);
+            parameters[4].Value = register;
+            parameters[5] = new SqlParameter("@Scale", System.Data.SqlDbType.Float);
+            parameters[5].Value = scale;
+            parameters[6] = new SqlParameter("@Offset", System.Data.SqlDbType.Float);
+            parameters[6].Value = offset;
+            parameters[7] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
+            parameters[7].Value = description;
+
+            try
+            {
+                connection.Open();
+                String query = "INSERT INTO Modbus_Info (IP_Address, Network_Port, Register, Scale, Offset) VALUES (@IP, @Port, @Register, @Scale, @Offset);";
+                SqlCommand command = connection.CreateCommand();
+                for(int i = 0; i < parameters.Length; i++)
+                {
+                    command.Parameters.Add(parameters[i]);
+                }
+                command.CommandText = query;
+                command.ExecuteNonQuery();
+                query = "SELECT TOP 1 Modbus_Info_ID FROM Modbus_Info ORDER BY Modbus_Info_ID DESC"; //get last inserted modbus info record - the one that was just made
+                command.CommandText = query;
+                Console.WriteLine(command.CommandText);
+                int modbusID = (int)command.ExecuteScalar();
+                Console.WriteLine("Modbus_Info_ID = " + modbusID);                
+                query = "INSERT INTO Sensor (Name, Calibration_Sensor, Sensor_Type, Chamber_ID, Modbus_Info_ID) VALUES (@Description, " + 0 + ", " +"@Type, @ChamberID, " + modbusID.ToString() + ");";
+                command.CommandText = query;
+                Console.WriteLine(command.CommandText);
+                command.ExecuteNonQuery();
+                command.Dispose();
+                connection.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
         }
 
         void produceSensorCalibrationInfo(int sensorID)

@@ -11,8 +11,9 @@ public class Sensor
     public double Scale { get; set; }
     public double Offset { get; set; }
     public string Description { get; set; }
+    public String Interface { get; set; }
 
-    public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID, string newDescription)
+    public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID, string newDescription, String newInterface)
     {
         ID = newID;
         Address = newAddress;
@@ -23,5 +24,6 @@ public class Sensor
         Offset = newOffset;
         ChamberID = newChamberID;
         Description = newDescription;
+        Interface = newInterface;
     }
 }
