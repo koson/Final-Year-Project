@@ -177,6 +177,7 @@ namespace Collector
                                 returned.GetString(1),
                                 "Modbus"));
                         }
+                        returned2.Close();
                     }
                 }
                 connection.Close();

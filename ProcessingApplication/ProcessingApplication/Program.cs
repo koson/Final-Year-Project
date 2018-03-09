@@ -27,21 +27,101 @@ namespace ProcessingApplication
             Program p = new Program();
             p.Initialise();
             p.GetEnvironment();
-            DataSet[] graphData = p.ProduceGraphData(p.chambers[0], DateTime.Parse("2018-02-21 05:50:10"), DateTime.Parse("2018-02-21 05:56:03"), false);
-            // Console.Write(s);
-            //p.AddModbusSensor("169.254.228.122", 504, 0, 1, 1, 0, 0, "Test add sensor");
-            //String sensors = p.BuildXML(p.GetSensorsForChamber(p.chambers[0]));
-            //Console.WriteLine(sensors);
-            p.ExportToExcel(graphData, "C:\\Users\\Raife\\chart", 60);
-            Console.Read();
-           /* if(args[0] == "getenv")
-            {
-                Console.Write(s);
+            //DataSet[] graphData = p.ProduceGraphData(p.chambers[0], DateTime.Parse("2018-03-07 03:23:00"), DateTime.Parse("2018-03-07 03:45:00"), true);
+            //p.ExportToExcel(graphData, "C:\\Users\\Raife\\chart", 60, p.chambers[0].Description);
+
+            switch (args[0]) {
+
+                case "getEnv":
+                    Console.Write(p.BuildXML(p.chambers));
+                    break;
+
+                case "produceGraph":
+                    string filename = null;
+                    int chamberID = 0;
+                    DateTime startDate = DateTime.Now;
+                    DateTime endDate = DateTime.Now;
+                    bool averageValues = false;         //placeholder values
+                    bool exportToExcel = false;
+
+                    bool parseSuccessful = false; //set to true if command line arguments are correctly parsed
+
+                    try
+                    {
+                        chamberID = int.Parse(args[1]);
+                        startDate = DateTime.Parse(args[2]);
+                        endDate = DateTime.Parse(args[3]);
+                        averageValues = Boolean.Parse(args[4]);
+                        exportToExcel = Boolean.Parse(args[5]);
+                        if (exportToExcel)
+                        {
+                            filename = args[6];
+                        }
+                        if(startDate < endDate)
+                        {
+                            parseSuccessful = true;
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0] + " is:");
+                        Console.WriteLine("\n");
+                        p.PrintUsageText(args[0]);
+                    }
+
+                    if(parseSuccessful)
+                    {
+                        DataSet[] graphData = p.ProduceGraphData(p.GetChamberByID(chamberID), startDate, endDate, averageValues);
+                        if (exportToExcel)
+                        {
+                            p.ExportToExcel(graphData, filename, p.GetChamberByID(chamberID).Description);
+                            // write XML "Success" message to out - can be read by third party applications
+                        }
+                        else
+                        {
+                            Console.Write(p.BuildXML(graphData));
+                        }
+                    }
+                    break;
+
+                case "addChamber":
+                    break;
+
+                case "editChamber":
+                    break;
+
+                case "removeChamber":
+                    break;
+
+                case "addSensor":
+                    break;
+
+                case "editSensor":
+                    break;
+
+                case "removeSensor":
+                    break;
+
+                case "help":
+                    if (args.Length == 2)
+                    {
+                        p.PrintUsageText(args[1]);
+                    }
+                    else
+                    {
+                        p.PrintUsageText("general");
+                    }
+                    break;
+
+                default:
+                    p.PrintUsageText("general");
+                    break;
             }
-            else
-            {
-                Console.WriteLine("Wrong usage");
-            }*/
+            Console.Read();
         }
 
         void Initialise()
@@ -51,9 +131,29 @@ namespace ProcessingApplication
                 + databaseUser + "; Password =" + databasePassword;
         }
 
-        void PrintUsageText() //prints help guide on command line
+        void PrintUsageText(string commandName) //prints help guide on command line
         {
-            Console.WriteLine();
+            switch (commandName)
+            {
+                case "general":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [command] [options]");
+                    break;
+                case "produceGraph":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe produceGraph chamberID startDate endDate averageValues exportToExcel [filename]");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - chamberID: The ID of the chamber you want to graph data from");
+                    Console.WriteLine(" - startDate: The date you want the graph to start from (format is \"yyyy-MM-dd hh:mm:ss\")");
+                    Console.WriteLine(" - endDate: The date you want the graph to end at (format is \"yyyy-MM-dd hh:mm:ss\")");
+                    Console.WriteLine(" - averageValues: If you want graph data to be averaged for one value every minute (true/false)");
+                    Console.WriteLine(" - exportToExcel: If you want the graph to be saved to an Excel spreadsheet (true/false)");
+                    Console.WriteLine(" - filename: full path to the sheet you want to save. Only used when exportToExcel is true");
+                    break;
+                default:
+                    Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [command] [options]");
+                    break;
+            }
+            
         }
 
         void GetEnvironment() //get all chambers and sensors in database (no actual reportable data)
@@ -99,6 +199,7 @@ namespace ProcessingApplication
                     }
                 }
                 connection.Close();
+                connection2.Close();
             }
             catch (Exception e)
             {
@@ -293,12 +394,7 @@ namespace ProcessingApplication
             return meanValues;
         }
 
-        void ExportToExcel2(DataSet[] chartData, String filename, int spacing)  //experimental version
-        {
-
-        }
-
-        void ExportToExcel(DataSet[] chartData, String filename, int spacing)
+        void ExportToExcel(DataSet[] chartData, String filename, String chamberName)  //experimental version to test using 3 different series of time
         {
             //create workbook
             Excel.Application xlApp;
@@ -320,52 +416,58 @@ namespace ProcessingApplication
             xlWorkSheet.Cells[1, 2] = "Temperature";
             xlWorkSheet.Cells[1, 3] = "Humidity";
             xlWorkSheet.Cells[1, 4] = "Pressure";
-            int largest = 0;
+            DateTime[] dates = sortDates(chartData);
+            //add times
+            for(int i = 0; i < dates.Length; i++)
+            {
+                xlWorkSheet.Cells[(i+2), 1] = dates[i].ToString();
+            }
 
-            for(int i = 0; i < chartData[0].Data.Length; i++)
+            //add data to sheet where timestamp matches time
+            for(int i = 0; i < 3; i++)
             {
-                
-                xlWorkSheet.Cells[1+(i+1), 2] = chartData[0].Data[i].Reading; //temp
-                if(i > largest)
+                for(int j = 0; j < chartData[i].Data.Length; j++)
                 {
-                    largest = i;
-                    xlWorkSheet.Cells[1 + (i + 1), 1] = chartData[0].Data[i].Timestamp.ToString(); //time
+                    for(int k = 0; k < dates.Length; k++)
+                    {
+                        if (String.Equals(dates[k].ToString(), chartData[i].Data[j].Timestamp.ToString()))
+                        {
+                            Console.WriteLine("Date is: " + dates[k].ToString());
+                            Console.WriteLine("Cell is: [" +(k+2) + "," + (i+2) + "]");
+                            Console.WriteLine("Reading is: " + chartData[i].Data[j].Reading);
+                            xlWorkSheet.Cells[(k+2), (i+2)] = chartData[i].Data[j].Reading;
+                            k = dates.Length;
+                        }
+                    }
                 }
             }
-            for(int i = 0; i < chartData[1].Data.Length; i++)
-            {
-                xlWorkSheet.Cells[1+(i+1), 3] = chartData[1].Data[i].Reading; //humid
-                if (i > largest)
-                {
-                    largest = i;
-                    xlWorkSheet.Cells[1 + (i + 1), 1] = chartData[1].Data[i].Timestamp.ToString(); //time
-                }
-            }
-            for (int i = 0; i < chartData[1].Data.Length; i++)
-            {
-                xlWorkSheet.Cells[1+(i+1), 3] = chartData[2].Data[i].Reading; //pressure
-                if (i > largest)
-                {
-                    largest = i;
-                    xlWorkSheet.Cells[1 + (i + 1), 1] = chartData[2].Data[i].Timestamp.ToString(); //time
-                }
-            }
-            largest += 2; //to get all rows
 
-            //build chart
-            Excel.Range chartRange;
+            Excel.Range allDataRange = xlWorkSheet.UsedRange;
+            allDataRange.Sort(allDataRange.Columns[1], Excel.XlSortOrder.xlAscending, misValue, misValue, Excel.XlSortOrder.xlAscending, misValue, Excel.XlSortOrder.xlAscending, Excel.XlYesNoGuess.xlYes); //sort by time, excluding first row (header)
 
             Excel.ChartObjects xlCharts = xlWorkSheet2.ChartObjects(Type.Missing);
             Excel.ChartObject myChart = xlCharts.Add(0, 0, 900, 500);
             Excel.Chart chartPage = myChart.Chart;
-
-            String bottomCell = "D" + largest.ToString();
-            chartRange = xlWorkSheet.get_Range("A1", bottomCell);
-            chartPage.SetSourceData(chartRange, misValue);
+            chartPage.HasTitle = true;
+            chartPage.ChartTitle.Text = "<JOBNUM-LINENUM> <CUSTOMER> - " + chamberName +  " Chart";
+            chartPage.SetSourceData(allDataRange, misValue);
             chartPage.ChartType = Excel.XlChartType.xlLine;
             Excel.Axis xAxis = (Excel.Axis)chartPage.Axes(Excel.XlAxisType.xlCategory, Excel.XlAxisGroup.xlPrimary);
-            xAxis.TickLabelSpacing = spacing;
-            xAxis.TickMarkSpacing = spacing;
+            xAxis.CategoryType = Excel.XlCategoryType.xlCategoryScale;
+            xAxis.HasTitle = true;
+            xAxis.AxisTitle.Text = "Time";
+
+            Excel.Axis yAxis1 = (Excel.Axis)chartPage.Axes(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlPrimary);
+            yAxis1.HasTitle = true;
+            yAxis1.AxisTitle.Text = "Temperature (°C) & Humidity (%)";
+            yAxis1.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
+
+            chartPage.SeriesCollection(3).AxisGroup = Excel.XlAxisGroup.xlSecondary; //make presure a secondary axis and tie to third series (column D - pressure)
+
+            Excel.Axis yAxis2 = (Excel.Axis)chartPage.Axes(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlSecondary);
+            yAxis2.HasTitle = true;
+            yAxis2.AxisTitle.Text = "Pressure (mbar) (a)";
+            yAxis2.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
 
             xlWorkBook.SaveAs(filename, Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
             xlWorkBook.Close(true, misValue, misValue);
@@ -374,7 +476,23 @@ namespace ProcessingApplication
             releaseObject(xlWorkSheet);
             releaseObject(xlWorkBook);
             releaseObject(xlApp);
-            //export result of ProduceGraphData() to an excel sheet
+        }
+
+        DateTime[] sortDates(DataSet[] chartData)
+        {
+            List<DateTime> dates = new List<DateTime>();
+            for(int i = 0; i < 3; i++)
+            {
+                for(int j = 0; j < chartData[i].Data.Length; j++)
+                {
+                    if (!dates.Contains(chartData[i].Data[j].Timestamp)) //add each date only once
+                    {
+                        dates.Add(chartData[i].Data[j].Timestamp);
+                    }
+                }
+            }
+            dates.Sort();
+            return dates.ToArray();
         }
 
         void AddChamber(String location, String description)
