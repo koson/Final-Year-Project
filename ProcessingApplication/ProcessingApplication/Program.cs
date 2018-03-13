@@ -22,18 +22,31 @@ namespace ProcessingApplication
         [XmlArrayItem("Chamber")]
         private Chamber[] chambers;
         private String connectionString;
+        bool debug;
+        bool interactive;
         static void Main(string[] args)
         {
             Program p = new Program();
             p.Initialise();
             p.GetEnvironment();
-            //DataSet[] graphData = p.ProduceGraphData(p.chambers[0], DateTime.Parse("2018-03-07 03:23:00"), DateTime.Parse("2018-03-07 03:45:00"), true);
-            //p.ExportToExcel(graphData, "C:\\Users\\Raife\\chart", 60, p.chambers[0].Description);
+            int offset = 0;
 
-            switch (args[0]) {
+            if(args[0] == "-i") //interactive mode
+            {
+                offset++;
+                p.interactive = true;
+            }
+
+            if(args[0] == "-d" || args[1] == "-d") //debug mode
+            {
+                p.debug = true;
+                offset++;
+            }
+
+            switch (args[0+offset]) {
 
                 case "getEnv":
-                    Console.Write(p.BuildXML(p.chambers));
+                    Console.Write(p.BuildXML(p.chambers, true));
                     break;
 
                 case "produceGraph":
@@ -48,14 +61,14 @@ namespace ProcessingApplication
 
                     try
                     {
-                        chamberID = int.Parse(args[1]);
-                        startDate = DateTime.Parse(args[2]);
-                        endDate = DateTime.Parse(args[3]);
-                        averageValues = Boolean.Parse(args[4]);
-                        exportToExcel = Boolean.Parse(args[5]);
+                        chamberID = int.Parse(args[1+offset]);
+                        startDate = DateTime.Parse(args[2+offset]);
+                        endDate = DateTime.Parse(args[3+offset]);
+                        averageValues = Boolean.Parse(args[4+offset]);
+                        exportToExcel = Boolean.Parse(args[5+offset]);
                         if (exportToExcel)
                         {
-                            filename = args[6];
+                            filename = args[6+offset];
                         }
                         if(startDate < endDate)
                         {
@@ -68,9 +81,13 @@ namespace ProcessingApplication
                     }
                     catch(Exception e)
                     {
-                        Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0] + " is:");
-                        Console.WriteLine("\n");
-                        p.PrintUsageText(args[0]);
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
                     }
 
                     if(parseSuccessful)
@@ -83,42 +100,230 @@ namespace ProcessingApplication
                         }
                         else
                         {
-                            Console.Write(p.BuildXML(graphData));
+                            Console.Write(p.BuildXML(graphData, true));
                         }
                     }
                     break;
 
                 case "addChamber":
+                    String chamberDescription = null;
+                    String chamberLocation = null; //placeholder values
+                    parseSuccessful = false;
+
+                    try
+                    {
+                        chamberDescription = args[1+offset];
+                        chamberLocation = args[2+offset];
+                        parseSuccessful = true;
+                    }
+                    catch(Exception e)
+                    {
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
+                    }
+                    if (parseSuccessful)
+                    {
+                        p.AddChamber(chamberLocation, chamberDescription);
+                        //add XML success return and new chamber ID
+                    }
                     break;
 
                 case "editChamber":
+                    chamberID = 0;
+                    chamberLocation = null;
+                    chamberDescription = null;
+                    parseSuccessful = false;
+
+                    try
+                    {
+                        chamberID = int.Parse(args[1+offset]);
+                        chamberDescription = args[2+offset];
+                        chamberLocation = args[3+offset];
+                        parseSuccessful = true;
+                    }catch(Exception e)
+                    {
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
+                    }
+
+                    if (parseSuccessful)
+                    {
+                        p.EditChamber(chamberID, chamberLocation, chamberDescription);
+                    }
                     break;
 
                 case "removeChamber":
+                    chamberID = 0;
+                    parseSuccessful = false;
+                    char confirm = ' ';
+                    try
+                    {
+                        chamberID = int.Parse(args[1+offset]);
+                        parseSuccessful = true;
+                    }catch(Exception e)
+                    {
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
+                    }
+
+                    if (parseSuccessful)
+                    {
+                        while(confirm != 'y' || confirm != 'n')
+                        {
+                            Console.WriteLine("Warning - this action will remove all associated sensors and the collected data for each sensor as well");
+                            Console.WriteLine("Are you sure you want to remove chamber " + chamberID + ": " + p.GetChamberByID(chamberID).Description + "?");
+                            confirm = (char)Console.Read();
+                        }
+                        if(confirm == 'y')
+                        {
+                            p.RemoveChamber(chamberID);
+                        }
+                    }
                     break;
 
                 case "addSensor":
+                    String sensorAddress = null;
+                    int sensorPort = 0;
+                    int sensorType = 0;
+                    chamberID = 0;
+                    int sensorRegister = 0;
+                    double sensorScale = 0;
+                    double sensorOffset = 0;
+                    String sensorDescription = null;
+                    parseSuccessful = false;
+
+                    try
+                    {
+                        sensorAddress = args[1+offset];
+                        sensorPort = int.Parse(args[2+offset]);
+                        sensorType = int.Parse(args[3+offset]);
+                        chamberID = int.Parse(args[4+offset]);
+                        sensorRegister = int.Parse(args[5+offset]);
+                        sensorScale = double.Parse(args[6+offset]);
+                        sensorOffset = double.Parse(args[7+offset]);
+                        sensorDescription = args[8+offset];
+
+                        parseSuccessful = true;
+                    }catch(Exception e)
+                    {
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
+                    }
+
+                    if (parseSuccessful)
+                    {
+                        p.AddModbusSensor(sensorAddress, sensorPort, sensorType, chamberID, sensorRegister, sensorScale, sensorOffset, sensorDescription);
+                    }
                     break;
 
                 case "editSensor":
+                    int sensorID = 0;
+                    sensorDescription = null;
+                    sensorType = 0;
+                    chamberID = 0;
+                    sensorAddress = null;
+                    sensorPort = 0;
+                    sensorRegister = 0;
+                    sensorScale = 0;
+                    sensorOffset = 0;
+                    parseSuccessful = false;
+
+                    try
+                    {
+                        sensorID = int.Parse(args[1+offset]);
+                        sensorDescription = args[2+offset];
+                        sensorType = int.Parse(args[3+offset]);
+                        chamberID = int.Parse(args[4+offset]);
+                        sensorAddress = args[5+offset];
+                        sensorPort = int.Parse(args[5+offset]);
+                        sensorRegister = int.Parse(args[6+offset]);
+                        sensorScale = double.Parse(args[7+offset]);
+                        sensorOffset = double.Parse(args[8+offset]);
+                        parseSuccessful = true;
+                    }catch(Exception e)
+                    {
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
+                    }
+
+                    if (parseSuccessful)
+                    {
+                        p.EditModbusSensor(sensorID, sensorDescription, 0, sensorType, chamberID, sensorAddress, sensorPort, sensorRegister, sensorScale, sensorOffset);
+                    }
                     break;
 
                 case "removeSensor":
+                    sensorID = 0;
+                    confirm = ' ';
+                    parseSuccessful = false;
+                    try
+                    {
+                        sensorID = int.Parse(args[1+offset]);
+                        parseSuccessful = true;
+                    }catch(Exception e)
+                    {
+                        if (p.interactive)
+                        {
+                            Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
+                            Console.WriteLine("\n");
+                            p.PrintUsageText(args[0 + offset]);
+                        }
+                        Console.Write(p.BuildXML(e, false));
+                    }
+
+                    if (parseSuccessful)
+                    {
+                        while(confirm != 'y' || confirm != 'n')
+                        {
+                            Console.WriteLine("Warning - this action will remove all collected data for the sensor as well");
+                            Console.WriteLine("Are you sure you want to permanently remove sensor " + sensorID + ": " + p.GetSensorByID(sensorID).Description + "?");
+                            confirm = (char)Console.Read();
+                        }
+                        if(confirm == 'y')
+                        {
+                            p.RemoveModbusSensor(sensorID);
+                        }
+                    }
                     break;
 
                 case "help":
                     if (args.Length == 2)
                     {
-                        p.PrintUsageText(args[1]);
+                        p.PrintUsageText(args[1+offset]);
                     }
                     else
                     {
-                        p.PrintUsageText("general");
+                        p.PrintUsageText("");
                     }
                     break;
 
                 default:
-                    p.PrintUsageText("general");
+                    p.PrintUsageText("");
                     break;
             }
             Console.Read();
@@ -127,6 +332,8 @@ namespace ProcessingApplication
         void Initialise()
         {
             ReadProgramConfig();
+            interactive = false;
+            debug = false;
             connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
         }
@@ -138,6 +345,7 @@ namespace ProcessingApplication
                 case "general":
                     Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [command] [options]");
                     break;
+
                 case "produceGraph":
                     Console.WriteLine("USAGE: ProcessingApplication.exe produceGraph chamberID startDate endDate averageValues exportToExcel [filename]");
                     Console.WriteLine("\n");
@@ -149,8 +357,69 @@ namespace ProcessingApplication
                     Console.WriteLine(" - exportToExcel: If you want the graph to be saved to an Excel spreadsheet (true/false)");
                     Console.WriteLine(" - filename: full path to the sheet you want to save. Only used when exportToExcel is true");
                     break;
+
+                case "addChamber":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe addChamber description location");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - description: The description for the new chamber");
+                    Console.WriteLine(" - location: The location of the new chamber");
+                    break;
+
+                case "editChamber":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe editChamber ID description location");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - ID: The ID of the existing chamber to edit");
+                    Console.WriteLine(" - description: The new description for the chamber");
+                    Console.WriteLine(" - location: The new location for the chamber");
+                    break;
+
+                case "removeChamber":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe removeChamber ID");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - ID: The ID of the chamber to remove");
+                    break;
+
+                case "addSensor":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe addSensor address port type chamberID register scale offset description");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - address: The IP address of the new sensor");
+                    Console.WriteLine(" - port: The network port of the new sensor");
+                    Console.WriteLine(" - type: The type of the new sensor");
+                    Console.WriteLine(" - chamberID: The ID of the chamber the new sensor belongs to");
+                    Console.WriteLine(" - register: The modbus register of the new sensor");
+                    Console.WriteLine(" - scale: The scale value of the new sensor");
+                    Console.WriteLine(" - offset: The offset value of the new sensor");
+                    Console.WriteLine(" - description: The description of the new sensor");
+                    break;
+
+                case "editSensor":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe editSensor ID description type chamberID address port register scale offset");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - address: The ID of the sensor to edit");
+                    Console.WriteLine(" - description: The description of the new sensor");
+                    Console.WriteLine(" - type: The type of the new sensor");
+                    Console.WriteLine(" - chamberID: The ID of the chamber the new sensor belongs to");
+                    Console.WriteLine(" - address: The IP address of the new sensor");
+                    Console.WriteLine(" - port: The network port of the new sensor");
+                    Console.WriteLine(" - register: The modbus register of the new sensor");
+                    Console.WriteLine(" - scale: The scale value of the new sensor");
+                    Console.WriteLine(" - offset: The offset value of the new sensor");
+                    
+                    break;
+
+                case "removeSensor":
+                    Console.WriteLine("USAGE: ProcessingApplication.exe removeSensor ID");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Parameters:");
+                    Console.WriteLine(" - ID: The ID of the sensor to remove");
+                    break;
                 default:
-                    Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [command] [options]");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [-i] [command] [options]");
                     break;
             }
             
@@ -292,6 +561,22 @@ namespace ProcessingApplication
                 }
             }
             return c;
+        }
+
+        Sensor GetSensorByID(int sensorID)
+        {
+            Sensor s = null;
+            for(int i = 0; i < chambers.Length; i++)
+            {
+                for(int j = 0; j < chambers[i].sensors.Length; j++)
+                {
+                    if (chambers[i].sensors[j].ID.Equals(sensorID))
+                    {
+                        s = chambers[i].sensors[j];
+                    }
+                }
+            }
+            return s;
         }
 
         DataSet[] ProduceGraphData(Chamber c, DateTime start, DateTime end, Boolean average)
@@ -472,10 +757,10 @@ namespace ProcessingApplication
             xlWorkBook.SaveAs(filename, Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
             xlWorkBook.Close(true, misValue, misValue);
             xlApp.Quit();
-
             releaseObject(xlWorkSheet);
             releaseObject(xlWorkBook);
             releaseObject(xlApp);
+            GC.Collect();
         }
 
         DateTime[] sortDates(DataSet[] chartData)
@@ -772,11 +1057,24 @@ namespace ProcessingApplication
             return temperatureValues;
         }
 
-        String BuildXML(Object o) //serialize an object to XML for command line output
+        String BuildXML(Object o, bool success) //serialize an object to XML for command line output
         {
-            XmlSerializer serializer = new XmlSerializer(o.GetType());
             System.IO.StringWriter writer = new System.IO.StringWriter();
-            serializer.Serialize(writer, o);
+            if (o != null && !(o is Exception))
+            {
+                XmlSerializer serializer = new XmlSerializer(o.GetType());
+                serializer.Serialize(writer, o);
+            }
+            if(o is IndexOutOfRangeException)
+            {
+                Exception e = (Exception)o;
+                System.Xml.XmlWriter xw = System.Xml.XmlWriter.Create(writer);
+                xw.WriteStartElement("Exception");
+                xw.WriteElementString("message", e.Message);
+                xw.WriteElementString("source", e.Source);
+            }
+            writer.WriteLine();
+            writer.WriteLine("<Success value=\"" + success + "\" />");
             return writer.ToString();
         }
 
