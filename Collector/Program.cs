@@ -154,7 +154,7 @@ namespace Collector
             {
                 connection.Open();
                 connection2.Open();
-                string query = "SELECT * FROM Sensor WHERE Calibration_Sensor=0;";
+                string query = "SELECT * FROM Sensor WHERE Sensor_Enabled=1;";
                 SqlCommand getSensors = new SqlCommand(query, connection);
                 var returned = getSensors.ExecuteReader();
                 while(returned.Read())

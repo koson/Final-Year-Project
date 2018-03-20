@@ -125,13 +125,13 @@ namespace CollectorService
             public int dwWaitHint;
         };
 
-        void PollSensor(Sensor sensor)
+        void PollModbusSensor(Sensor sensor)
         {
-            var result = ReadSensor(sensor);
+            var result = ReadModbusSensor(sensor);
             SendToDatabase(sensor, result);
         }
 
-        Tuple<double, double, String> ReadSensor(Sensor sensor) //tuple allows to return multiple values
+        Tuple<double, double, String> ReadModbusSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
             double regValue = CalculateRegisterValue(rawData);
@@ -237,7 +237,7 @@ namespace CollectorService
             {
                 connection.Open();
                 connection2.Open();
-                string query = "SELECT * FROM Sensor WHERE Calibration_Sensor=0;";
+                string query = "SELECT * FROM Sensor WHERE Sensor_Enabled=1;";
                 SqlCommand getSensors = new SqlCommand(query, connection);
                 var returned = getSensors.ExecuteReader();
                 while(returned.Read())

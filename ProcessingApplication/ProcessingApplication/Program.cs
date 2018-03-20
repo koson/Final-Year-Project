@@ -81,7 +81,7 @@ namespace ProcessingApplication
                     }
                     catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -92,33 +92,41 @@ namespace ProcessingApplication
 
                     if(parseSuccessful)
                     {
-                        DataSet[] graphData = p.ProduceGraphData(p.GetChamberByID(chamberID), startDate, endDate, averageValues);
-                        if (exportToExcel)
+                        Chamber c = p.GetChamberByID(chamberID);
+                        if (c != null)
                         {
-                            p.ExportToExcel(graphData, filename, p.GetChamberByID(chamberID).Description);
-                            // write XML "Success" message to out - can be read by third party applications
+                            DataSet[] graphData = p.ProduceGraphData(p.GetChamberByID(chamberID), startDate, endDate, averageValues);
+                            if (exportToExcel)
+                            {
+                                p.ExportToExcel(graphData, filename, p.GetChamberByID(chamberID).Description);
+                                Console.Write(p.BuildXML(null, true));
+                            }
+                            else
+                            {
+                                Console.Write(p.BuildXML(graphData, true));
+                            }
                         }
-                        else
-                        {
-                            Console.Write(p.BuildXML(graphData, true));
+                        else{
+                            p.BuildXML(null, false);
                         }
+                        
                     }
                     break;
 
                 case "addChamber":
                     String chamberDescription = null;
-                    String chamberLocation = null; //placeholder values
+                    String chamberName = null; //placeholder values
                     parseSuccessful = false;
 
                     try
                     {
                         chamberDescription = args[1+offset];
-                        chamberLocation = args[2+offset];
+                        chamberName = args[2+offset];
                         parseSuccessful = true;
                     }
                     catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -128,14 +136,14 @@ namespace ProcessingApplication
                     }
                     if (parseSuccessful)
                     {
-                        p.AddChamber(chamberLocation, chamberDescription);
-                        //add XML success return and new chamber ID
+                        p.AddChamber(chamberName, chamberDescription);
+                        p.BuildXML(null, true);
                     }
                     break;
 
                 case "editChamber":
                     chamberID = 0;
-                    chamberLocation = null;
+                    chamberName = null;
                     chamberDescription = null;
                     parseSuccessful = false;
 
@@ -143,11 +151,11 @@ namespace ProcessingApplication
                     {
                         chamberID = int.Parse(args[1+offset]);
                         chamberDescription = args[2+offset];
-                        chamberLocation = args[3+offset];
+                        chamberName = args[3+offset];
                         parseSuccessful = true;
                     }catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -158,7 +166,8 @@ namespace ProcessingApplication
 
                     if (parseSuccessful)
                     {
-                        p.EditChamber(chamberID, chamberLocation, chamberDescription);
+                        p.EditChamber(chamberID, chamberName, chamberDescription);
+                        p.BuildXML(null, true);
                     }
                     break;
 
@@ -172,7 +181,7 @@ namespace ProcessingApplication
                         parseSuccessful = true;
                     }catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -192,6 +201,7 @@ namespace ProcessingApplication
                         if(confirm == 'y')
                         {
                             p.RemoveChamber(chamberID);
+                            p.BuildXML(null, true);
                         }
                     }
                     break;
@@ -205,6 +215,7 @@ namespace ProcessingApplication
                     double sensorScale = 0;
                     double sensorOffset = 0;
                     String sensorDescription = null;
+                    bool sensorEnabled;
                     parseSuccessful = false;
 
                     try
@@ -217,11 +228,11 @@ namespace ProcessingApplication
                         sensorScale = double.Parse(args[6+offset]);
                         sensorOffset = double.Parse(args[7+offset]);
                         sensorDescription = args[8+offset];
-
+                        sensorEnabled = bool.Parse(args[9 + offset]);
                         parseSuccessful = true;
                     }catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -232,13 +243,15 @@ namespace ProcessingApplication
 
                     if (parseSuccessful)
                     {
-                        p.AddModbusSensor(sensorAddress, sensorPort, sensorType, chamberID, sensorRegister, sensorScale, sensorOffset, sensorDescription);
+                        p.AddModbusSensor(sensorAddress, sensorPort, sensorType, chamberID, sensorRegister, sensorScale, sensorOffset, sensorDescription, sensorEnabled);
+                        p.BuildXML(null, true);
                     }
                     break;
 
                 case "editSensor":
                     int sensorID = 0;
                     sensorDescription = null;
+                    sensorEnabled = true;
                     sensorType = 0;
                     chamberID = 0;
                     sensorAddress = null;
@@ -252,17 +265,18 @@ namespace ProcessingApplication
                     {
                         sensorID = int.Parse(args[1+offset]);
                         sensorDescription = args[2+offset];
-                        sensorType = int.Parse(args[3+offset]);
-                        chamberID = int.Parse(args[4+offset]);
-                        sensorAddress = args[5+offset];
-                        sensorPort = int.Parse(args[5+offset]);
-                        sensorRegister = int.Parse(args[6+offset]);
-                        sensorScale = double.Parse(args[7+offset]);
-                        sensorOffset = double.Parse(args[8+offset]);
+                        sensorEnabled = bool.Parse(args[3 + offset]);
+                        sensorType = int.Parse(args[4+offset]);
+                        chamberID = int.Parse(args[5+offset]);
+                        sensorAddress = args[6+offset];
+                        sensorPort = int.Parse(args[7+offset]);
+                        sensorRegister = int.Parse(args[8+offset]);
+                        sensorScale = double.Parse(args[9+offset]);
+                        sensorOffset = double.Parse(args[10+offset]);
                         parseSuccessful = true;
                     }catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -273,7 +287,8 @@ namespace ProcessingApplication
 
                     if (parseSuccessful)
                     {
-                        p.EditModbusSensor(sensorID, sensorDescription, 0, sensorType, chamberID, sensorAddress, sensorPort, sensorRegister, sensorScale, sensorOffset);
+                        p.EditModbusSensor(sensorID, sensorDescription, sensorEnabled, sensorType, chamberID, sensorAddress, sensorPort, sensorRegister, sensorScale, sensorOffset);
+                        p.BuildXML(null, true);
                     }
                     break;
 
@@ -287,7 +302,7 @@ namespace ProcessingApplication
                         parseSuccessful = true;
                     }catch(Exception e)
                     {
-                        if (p.interactive)
+                        if (p.interactive || p.debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
@@ -307,6 +322,7 @@ namespace ProcessingApplication
                         if(confirm == 'y')
                         {
                             p.RemoveModbusSensor(sensorID);
+                            p.BuildXML(null, true);
                         }
                     }
                     break;
@@ -359,20 +375,20 @@ namespace ProcessingApplication
                     break;
 
                 case "addChamber":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe addChamber description location");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe addChamber description name");
                     Console.WriteLine("\n");
                     Console.WriteLine("Parameters:");
                     Console.WriteLine(" - description: The description for the new chamber");
-                    Console.WriteLine(" - location: The location of the new chamber");
+                    Console.WriteLine(" - name: The name of the new chamber");
                     break;
 
                 case "editChamber":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe editChamber ID description location");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe editChamber ID description name");
                     Console.WriteLine("\n");
                     Console.WriteLine("Parameters:");
                     Console.WriteLine(" - ID: The ID of the existing chamber to edit");
                     Console.WriteLine(" - description: The new description for the chamber");
-                    Console.WriteLine(" - location: The new location for the chamber");
+                    Console.WriteLine(" - name: The new name for the chamber");
                     break;
 
                 case "removeChamber":
@@ -383,7 +399,7 @@ namespace ProcessingApplication
                     break;
 
                 case "addSensor":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe addSensor address port type chamberID register scale offset description");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe addSensor address port type chamberID register scale offset description enabled");
                     Console.WriteLine("\n");
                     Console.WriteLine("Parameters:");
                     Console.WriteLine(" - address: The IP address of the new sensor");
@@ -394,14 +410,16 @@ namespace ProcessingApplication
                     Console.WriteLine(" - scale: The scale value of the new sensor");
                     Console.WriteLine(" - offset: The offset value of the new sensor");
                     Console.WriteLine(" - description: The description of the new sensor");
+                    Console.WriteLine(" - enabled: If data should be collected from the new sensor");
                     break;
 
                 case "editSensor":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe editSensor ID description type chamberID address port register scale offset");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe editSensor ID description enabled type chamberID address port register scale offset");
                     Console.WriteLine("\n");
                     Console.WriteLine("Parameters:");
                     Console.WriteLine(" - address: The ID of the sensor to edit");
                     Console.WriteLine(" - description: The description of the new sensor");
+                    Console.WriteLine(" - enabled: If data should be collected from the new sensor");
                     Console.WriteLine(" - type: The type of the new sensor");
                     Console.WriteLine(" - chamberID: The ID of the chamber the new sensor belongs to");
                     Console.WriteLine(" - address: The IP address of the new sensor");
@@ -472,7 +490,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if(interactive || debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -507,7 +528,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if(interactive || debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -541,7 +565,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (interactive || debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -581,9 +608,8 @@ namespace ProcessingApplication
 
         DataSet[] ProduceGraphData(Chamber c, DateTime start, DateTime end, Boolean average)
         {
-            DataSet temperatureValues = new DataSet();
-            DataSet pressureValues = new DataSet();
-            DataSet humidityValues = new DataSet();
+            DataSet tempDataSet = new DataSet();
+            List<DataSet> finalValues = new List<DataSet>();
             for (int i = 0; i < c.sensors.Length; i++)
             {
                 switch (c.sensors[i].SensorType)
@@ -592,15 +618,15 @@ namespace ProcessingApplication
                         DataSet tempAverage = GetDataForSensor(c.sensors[i], start, end);
                         if(tempAverage.Data.Length != 0 && average)
                         {
-                            temperatureValues = ProduceMeanValues(tempAverage);
-                            temperatureValues.SensorID = c.sensors[i].ID;
+                            tempDataSet = ProduceMeanValues(tempAverage);
+                            tempDataSet.SensorID = c.sensors[i].ID;
                         }
                         else
                         {
                             if (tempAverage.Data.Length != 0)
                             {
-                                temperatureValues = GetDataForSensor(c.sensors[i], start, end);
-                                temperatureValues.SensorID = c.sensors[i].ID;
+                                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
+                                tempDataSet.SensorID = c.sensors[i].ID;
                             }
                         }
                         break;
@@ -608,15 +634,15 @@ namespace ProcessingApplication
                         DataSet pressureAverage = GetDataForSensor(c.sensors[i], start, end);
                         if(pressureAverage.Data.Length != 0 && average)
                         {
-                            pressureValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
-                            pressureValues.SensorID = c.sensors[i].ID;
+                            tempDataSet = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
+                            tempDataSet.SensorID = c.sensors[i].ID;
                         }
                         else
                         {
                             if (pressureAverage.Data.Length != 0)
                             {
-                                pressureValues = GetDataForSensor(c.sensors[i], start, end);
-                                pressureValues.SensorID = c.sensors[i].ID;
+                                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
+                                tempDataSet.SensorID = c.sensors[i].ID;
                             }
                         }
                         break;
@@ -624,15 +650,15 @@ namespace ProcessingApplication
                         DataSet humidityAverage = GetDataForSensor(c.sensors[i], start, end);
                         if(humidityAverage.Data.Length != 0 && average)
                         {
-                            humidityValues = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
-                            humidityValues.SensorID = c.sensors[i].ID;
+                            tempDataSet = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
+                            tempDataSet.SensorID = c.sensors[i].ID;
                         }
                         else
                         {
                             if(humidityAverage.Data.Length != 0)
                             {
-                                humidityValues = GetDataForSensor(c.sensors[i], start, end);
-                                humidityValues.SensorID = c.sensors[i].ID;
+                                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
+                                tempDataSet.SensorID = c.sensors[i].ID;
                             }
                         } 
                         break;
@@ -640,12 +666,9 @@ namespace ProcessingApplication
                         throw new Exception(); //find more specific error - pass error back to GUI or event log
                         //break;
                 }
+                finalValues.Add(tempDataSet);
             }
-            DataSet[] finalValues = new DataSet[3]; //3 sets of values to plot on graph
-            finalValues[0] = temperatureValues;
-            finalValues[1] = pressureValues;
-            finalValues[2] = humidityValues; 
-            return finalValues;
+            return finalValues.ToArray();
         }
 
         //change to allow custom time intervals to average (based off user input in GUI)?
@@ -655,9 +678,12 @@ namespace ProcessingApplication
             DateTime earliestTime = dataToAverage.Data[0].Timestamp.AddSeconds(-(dataToAverage.Data[0].Timestamp.Second)); //earliest whole minute
             DateTime latestTime = dataToAverage.Data[dataToAverage.Data.Length-1].Timestamp.AddSeconds(60- dataToAverage.Data[dataToAverage.Data.Length - 1].Timestamp.Second); //latest whole minute
             TimeSpan minutesDifference = latestTime.Subtract(earliestTime); //amount of minutes in between
-            Console.WriteLine(earliestTime);
-            Console.WriteLine(latestTime);
-            Console.WriteLine(minutesDifference.TotalMinutes);
+            if (debug)
+            {
+                Console.WriteLine(earliestTime);
+                Console.WriteLine(latestTime);
+                Console.WriteLine(minutesDifference.TotalMinutes);
+            }
 
             for(int i = 0; i < minutesDifference.TotalMinutes; i++) //calculate mean value for each minute
             {
@@ -666,14 +692,20 @@ namespace ProcessingApplication
                 {
                     if (dataToAverage.Data[j].Timestamp < (earliestTime.AddMinutes(i+1)) && dataToAverage.Data[j].Timestamp >= earliestTime.AddMinutes(i)) //search all data for each sensor and add any within minute range to valuesToMean
                     {
-                        Console.WriteLine(dataToAverage.Data[j].Timestamp + ": " + dataToAverage.Data[j].Reading);
+                        if (debug)
+                        {
+                            Console.WriteLine(dataToAverage.Data[j].Timestamp + ": " + dataToAverage.Data[j].Reading);
+                        }
                         valuesToMean.Add(dataToAverage.Data[j].Reading);
                     }
                 }
 
                 Double mean = Enumerable.Average(valuesToMean); //average values
                 meanValues.AddDataItem(new DataItem(mean, earliestTime.AddMinutes(i))); //add to array of points to plot on graph (gets returned by function)
-                Console.WriteLine(mean);
+                if (debug)
+                {
+                    Console.WriteLine(mean);
+                }
             }
 
             return meanValues;
@@ -698,9 +730,6 @@ namespace ProcessingApplication
 
             //add data
             xlWorkSheet.Cells[1, 1] = "Time";
-            xlWorkSheet.Cells[1, 2] = "Temperature";
-            xlWorkSheet.Cells[1, 3] = "Humidity";
-            xlWorkSheet.Cells[1, 4] = "Pressure";
             DateTime[] dates = sortDates(chartData);
             //add times
             for(int i = 0; i < dates.Length; i++)
@@ -709,17 +738,36 @@ namespace ProcessingApplication
             }
 
             //add data to sheet where timestamp matches time
-            for(int i = 0; i < 3; i++)
+            for(int i = 0; i < chartData.Length; i++)
             {
-                for(int j = 0; j < chartData[i].Data.Length; j++)
+                int sensorID = chartData[i].SensorID;
+                int sensorType = GetSensorByID(chartData[i].SensorID).SensorType;
+                switch (sensorType)
+                {
+                    case 0:
+                        xlWorkSheet.Cells[1, (i + 2)] = "Temperature Sensor " + sensorID.ToString();
+                        break;
+
+                    case 1:
+                        xlWorkSheet.Cells[1, (i + 2)] = "Pressure Sensor " + sensorID.ToString();
+                        break;
+
+                    case 2:
+                        xlWorkSheet.Cells[1, (i + 2)] = "Humidity Sensor " + sensorID.ToString();
+                        break;
+                }
+                for (int j = 0; j < chartData[i].Data.Length; j++)
                 {
                     for(int k = 0; k < dates.Length; k++)
-                    {
+                    {  
                         if (String.Equals(dates[k].ToString(), chartData[i].Data[j].Timestamp.ToString()))
                         {
-                            Console.WriteLine("Date is: " + dates[k].ToString());
-                            Console.WriteLine("Cell is: [" +(k+2) + "," + (i+2) + "]");
-                            Console.WriteLine("Reading is: " + chartData[i].Data[j].Reading);
+                            if (debug)
+                            {
+                                Console.WriteLine("Date is: " + dates[k].ToString());
+                                Console.WriteLine("Cell is: [" + (k + 2) + "," + (i + 2) + "]");
+                                Console.WriteLine("Reading is: " + chartData[i].Data[j].Reading);
+                            }
                             xlWorkSheet.Cells[(k+2), (i+2)] = chartData[i].Data[j].Reading;
                             k = dates.Length;
                         }
@@ -747,12 +795,29 @@ namespace ProcessingApplication
             yAxis1.AxisTitle.Text = "Temperature (°C) & Humidity (%)";
             yAxis1.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
 
-            chartPage.SeriesCollection(3).AxisGroup = Excel.XlAxisGroup.xlSecondary; //make presure a secondary axis and tie to third series (column D - pressure)
+            Boolean pressureData = false;
+            //make all pressure data bound to secondary axis
+            for (int i = 0; i < chartData.Length; i++)
+            {
+                String cellValue = (string)(xlWorkSheet.Cells[1, (i + 2)] as Excel.Range).Value;
+                if (cellValue == ("Pressure Sensor " + chartData[i].SensorID))
+                {
+                    chartPage.SeriesCollection((i + 1)).AxisGroup = Excel.XlAxisGroup.xlSecondary;
+                    if (debug)
+                    {
+                        Console.WriteLine("Pressure Data");
+                    }
+                    pressureData = true;
+                }
+            }
 
-            Excel.Axis yAxis2 = (Excel.Axis)chartPage.Axes(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlSecondary);
-            yAxis2.HasTitle = true;
-            yAxis2.AxisTitle.Text = "Pressure (mbar) (a)";
-            yAxis2.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
+            if (pressureData)
+            {
+                Excel.Axis yAxis2 = (Excel.Axis)chartPage.Axes(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlSecondary);
+                yAxis2.HasTitle = true;
+                yAxis2.AxisTitle.Text = "Pressure (mbar) (a)";
+                yAxis2.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
+            }
 
             xlWorkBook.SaveAs(filename, Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
             xlWorkBook.Close(true, misValue, misValue);
@@ -766,7 +831,7 @@ namespace ProcessingApplication
         DateTime[] sortDates(DataSet[] chartData)
         {
             List<DateTime> dates = new List<DateTime>();
-            for(int i = 0; i < 3; i++)
+            for(int i = 0; i < chartData.Length; i++)
             {
                 for(int j = 0; j < chartData[i].Data.Length; j++)
                 {
@@ -780,12 +845,12 @@ namespace ProcessingApplication
             return dates.ToArray();
         }
 
-        void AddChamber(String location, String description)
+        void AddChamber(String name, String description)
         {
-            String query = "INSERT INTO Chamber (Location, Description) VALUES (@Location, @Description);";
+            String query = "INSERT INTO Chamber (Name, Description) VALUES (@Name, @Description);";
             SqlParameter[] parameters = new SqlParameter[2];
-            parameters[0] = new SqlParameter("@Location", System.Data.SqlDbType.VarChar);
-            parameters[0].Value = location;
+            parameters[0] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
+            parameters[0].Value = name;
             parameters[1] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
             parameters[1].Value = description;
             SqlConnection connection = new SqlConnection(connectionString);
@@ -804,7 +869,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }   
             }
             finally
             {
@@ -812,10 +880,10 @@ namespace ProcessingApplication
             }
         }
 
-        void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description) //add sensor to database
+        void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, bool enabled) //add sensor to database
         {
             SqlConnection connection = new SqlConnection(connectionString);
-            SqlParameter[] parameters = new SqlParameter[8];
+            SqlParameter[] parameters = new SqlParameter[9];
             parameters[0] = new SqlParameter("@IP", System.Data.SqlDbType.VarChar);
             parameters[0].Value = address;
             parameters[1] = new SqlParameter("@Port", System.Data.SqlDbType.Int);
@@ -832,6 +900,16 @@ namespace ProcessingApplication
             parameters[6].Value = offset;
             parameters[7] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
             parameters[7].Value = description;
+            parameters[8] = new SqlParameter("@Enabled", System.Data.SqlDbType.Bit);
+            if (enabled)
+            {
+                parameters[8].Value = 1;
+            }
+            else
+            {
+                parameters[8].Value = 0;
+            }
+            
             String query = "INSERT INTO Modbus_Info (IP_Address, Network_Port, Register, Scale, Offset) VALUES (@IP, @Port, @Register, @Scale, @Offset);";
             SqlCommand command = connection.CreateCommand();
             for (int i = 0; i < parameters.Length; i++)
@@ -846,7 +924,7 @@ namespace ProcessingApplication
                 query = "SELECT TOP 1 Modbus_Info_ID FROM Modbus_Info ORDER BY Modbus_Info_ID DESC;"; //get last inserted modbus info record - the one that was just made
                 command.CommandText = query;
                 int modbusID = (int)command.ExecuteScalar();              
-                query = "INSERT INTO Sensor (Name, Calibration_Sensor, Sensor_Type, Chamber_ID, Modbus_Info_ID) VALUES (@Description, " + 0 + ", " +"@Type, @ChamberID, " + modbusID.ToString() + ");";
+                query = "INSERT INTO Sensor (Name, Sensor_Enabled, Sensor_Type, Chamber_ID, Modbus_Info_ID) VALUES (@Description, @Enabled,  @Type, @ChamberID, " + modbusID.ToString() + ");";
                 command.CommandText = query;
                 command.ExecuteNonQuery();
                 command.Dispose();
@@ -854,7 +932,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -888,7 +969,10 @@ namespace ProcessingApplication
                 connection.Close();
             }catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -919,7 +1003,10 @@ namespace ProcessingApplication
                 connection.Close();
             }catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -928,10 +1015,10 @@ namespace ProcessingApplication
 
         }
 
-        void EditModbusSensor(int sensorID, String name, int cal, int type, int chamberID, String address, int port, int register, double scale, double offset)
+        void EditModbusSensor(int sensorID, String name, bool enabled, int type, int chamberID, String address, int port, int register, double scale, double offset)
         {
             String getModbusInfoID = "SELECT Modbus_Info_ID FROM Sensor WHERE Sensor_ID = @SensorID;";
-            String updateSensor = "UPDATE Sensor SET Name = @Name, Calibration_Sensor = @Cal, Sensor_Type = @Type, Chamber_ID = @Chamber, Modbus_Info_ID = @ModbusID WHERE Sensor_ID = @SensorID;";
+            String updateSensor = "UPDATE Sensor SET Name = @Name, Sensor_Enabled = @Enabled, Sensor_Type = @Type, Chamber_ID = @Chamber, Modbus_Info_ID = @ModbusID WHERE Sensor_ID = @SensorID;";
             String updateModbusInfo = "UPDATE Modbus_Info SET IP_Address = @Address, Network_Port = @Port, Register = @Register, Scale = @Scale, Offset = @Offset WHERE Modbus_Info_ID = @ModbusID;";
             SqlConnection connection = new SqlConnection(connectionString);
             SqlCommand cmd = connection.CreateCommand();
@@ -940,8 +1027,15 @@ namespace ProcessingApplication
             parameters[0].Value = sensorID;
             parameters[1] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
             parameters[1].Value = name;
-            parameters[2] = new SqlParameter("@Cal", System.Data.SqlDbType.Bit);
-            parameters[2].Value = cal;
+            parameters[2] = new SqlParameter("@Enabled", System.Data.SqlDbType.Bit);
+            if (enabled)
+            {
+                parameters[2].Value = 1;
+            }
+            else
+            {
+                parameters[2].Value = 0;
+            }
             parameters[3] = new SqlParameter("@Type", System.Data.SqlDbType.Int);
             parameters[3].Value = type;
             parameters[4] = new SqlParameter("@ChamberID", System.Data.SqlDbType.Int);
@@ -976,7 +1070,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -1005,7 +1102,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -1013,14 +1113,14 @@ namespace ProcessingApplication
             }
         }
 
-        void EditChamber(int chamberID, String location, String description)
+        void EditChamber(int chamberID, String name, String description)
         {
-            String query = "UPDATE Chamber SET Location = @Location, Description = @Description WHERE Chamber_ID = @ID;";
+            String query = "UPDATE Chamber SET Name = @Name, Description = @Description WHERE Chamber_ID = @ID;";
             SqlParameter[] parameters = new SqlParameter[3];
             parameters[0] = new SqlParameter("@ID", System.Data.SqlDbType.Int);
             parameters[0].Value = chamberID;
-            parameters[1] = new SqlParameter("@Location", System.Data.SqlDbType.VarChar);
-            parameters[1].Value = location;
+            parameters[1] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
+            parameters[1].Value = name;
             parameters[2] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
             parameters[2].Value = description;
             SqlConnection connection = new SqlConnection(connectionString);
@@ -1038,7 +1138,10 @@ namespace ProcessingApplication
                 connection.Close();
             }catch(Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -1090,7 +1193,10 @@ namespace ProcessingApplication
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
@@ -1108,7 +1214,10 @@ namespace ProcessingApplication
             catch (Exception e)
             {
                 obj = null;
-                Console.WriteLine(e.ToString());
+                if (debug)
+                {
+                    Console.WriteLine(e.ToString());
+                }
             }
             finally
             {
