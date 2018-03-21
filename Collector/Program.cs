@@ -20,7 +20,7 @@ namespace Collector
         private int sensorPollInterval;
         private Sensor[] sensors;
 
-        static void Main(string[] args) //method only has test statements rn
+        static void Main(string[] args) //test version for use before adding functionality to the service
         {
             Program program = new Program();
             program.ReadGeneralConfig();
@@ -31,6 +31,8 @@ namespace Collector
             pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(program.OnTimer);
             Console.ReadLine();
         }
+
+        //repoll all sensors
         public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
             Task[] tasks = new Task[sensors.Length];
@@ -45,21 +47,34 @@ namespace Collector
             }
         }
 
+        //start whole data process for one sensor
         void PollModbusSensor(Sensor sensor)
         {
             var result = ReadModbusSensor(sensor);
-            SendToDatabase(sensor, result);
+            if(result != null)
+            {
+                SendToDatabase(sensor, result);
+            }
         }
 
+        //request and receive data. Separate to database saving
         Tuple<double, double, String> ReadModbusSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
-            double regValue = CalculateRegisterValue(rawData);
-            double sensorReading = GetModbusSensorReading(regValue, sensor);
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
-            Console.WriteLine(timestamp);
-            var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
-            return toReturn;
+            if(rawData != null)
+            {
+                double regValue = CalculateRegisterValue(rawData);
+                double sensorReading = GetModbusSensorReading(regValue, sensor);
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
+                Console.WriteLine(timestamp);
+                var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
+                return toReturn;
+            }
+            else
+            {
+                return null;
+            }
+            
         }
 
         ushort CalculateRegisterValue(byte[] rawData)
@@ -72,6 +87,7 @@ namespace Collector
             return regValue;
         }
 
+        //obsolete
         double CalculateVoltage(double regValue)
         { //calculates voltage based off register value received
             double voltage = regValue / 409.5; //http://www.proconel.com/Industrial-Data-Acquisition-Products/MODBUS-TCP-I-O-Modules/PM8AI-V-ISO---8-Voltage-Input-Module-Fully-Isolate.aspx states that 819 = 2v
@@ -132,15 +148,23 @@ namespace Collector
             byte functionCode = 0b100;
             byte[] received;
             byte register = (byte)sensor.Register;
-            TcpClient client = new TcpClient(sensor.Address, sensor.Port); //add try-catch
-            NetworkStream nwStream = client.GetStream();
-            byte[] request = new byte[] { upperTransIdentifier, transIdentifier, protocolIdentifier, protocolIdentifier,
+
+            try
+            {
+                TcpClient client = new TcpClient(sensor.Address, sensor.Port); //add try-catch
+                NetworkStream nwStream = client.GetStream();
+                byte[] request = new byte[] { upperTransIdentifier, transIdentifier, protocolIdentifier, protocolIdentifier,
         upperHeaderLength, lowerHeaderLength, unitIdentifier, functionCode, 0b0, register, 0b0, 0b1};
-            nwStream.Write(request, 0, request.Length);
-            received = new byte[client.ReceiveBufferSize];
-            int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
-            client.Close();
-            return received;
+                nwStream.Write(request, 0, request.Length);
+                received = new byte[client.ReceiveBufferSize];
+                int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
+                client.Close();
+                return received;
+            }catch(Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return null;
+            }
         }
 
         Sensor[] ReadSensorConfig()

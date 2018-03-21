@@ -128,17 +128,24 @@ namespace CollectorService
         void PollModbusSensor(Sensor sensor)
         {
             var result = ReadModbusSensor(sensor);
-            SendToDatabase(sensor, result);
+            if(result != null)
+            {
+                SendToDatabase(sensor, result);
+            }
         }
 
         Tuple<double, double, String> ReadModbusSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
-            double regValue = CalculateRegisterValue(rawData);
-            double sensorReading = GetSensorReading(regValue, sensor);
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
-            var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
-            return toReturn;
+            if(rawData != null)
+            {
+                double regValue = CalculateRegisterValue(rawData);
+                double sensorReading = GetSensorReading(regValue, sensor);
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
+                var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
+                return toReturn;
+            }
+            return null;
         }
 
         ushort CalculateRegisterValue(byte[] rawData)
@@ -207,7 +214,6 @@ namespace CollectorService
             byte unitIdentifier = 0b1;
             byte functionCode = 0b100;
             byte register = (byte)sensor.Register;
-            byte[] received = new byte[0];
             try
             {
                 TcpClient client = new TcpClient(sensor.Address, sensor.Port); //add try-catch
@@ -215,15 +221,20 @@ namespace CollectorService
                 byte[] request = new byte[] { upperTransIdentifier, transIdentifier, protocolIdentifier, protocolIdentifier,
                 upperHeaderLength, lowerHeaderLength, unitIdentifier, functionCode, 0b0, register, 0b0, 0b1};
                 nwStream.Write(request, 0, request.Length);
-                received = new byte[client.ReceiveBufferSize];
+                byte[] received = new byte[client.ReceiveBufferSize];
                 int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
                 client.Close();
+                return received;
             }
             catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while reading data from a sensor. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
             }
-            return received;
+            finally
+            {
+                GC.Collect();
+            }
+            return null;
         }
 
         Sensor[] ReadSensorConfig()
@@ -269,6 +280,10 @@ namespace CollectorService
             {
                 eventLog.WriteEntry("An error occured while reading sensor information from database. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
             }
+            finally
+            {
+                GC.Collect();
+            }
             eventLog.WriteEntry("successfully read sensor configuration from database", EventLogEntryType.Information, eventID++);
             Sensor[] sensorArray = sensors.ToArray();
             if(sensorArray.Length == 0)
@@ -293,6 +308,11 @@ namespace CollectorService
             catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while reading general configuration. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
+                throw new Exception();
+            }
+            finally
+            {
+                GC.Collect();
             }
             eventLog.WriteEntry("successfully read general configuration", EventLogEntryType.Information, eventID++);
         }
@@ -315,6 +335,10 @@ namespace CollectorService
             catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while sending information to the database. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
+            }
+            finally
+            {
+                GC.Collect();
             }
         }
     }

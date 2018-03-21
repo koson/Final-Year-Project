@@ -31,7 +31,9 @@ namespace ProcessingApplication
             p.GetEnvironment();
             int offset = 0;
 
-            if(args[0] == "-i") //interactive mode
+            if(args.Length > 1)
+            {
+                            if(args[0] == "-i" || args[1] == "-i") //interactive mode
             {
                 offset++;
                 p.interactive = true;
@@ -41,6 +43,7 @@ namespace ProcessingApplication
             {
                 p.debug = true;
                 offset++;
+            }
             }
 
             switch (args[0+offset]) {
@@ -215,7 +218,7 @@ namespace ProcessingApplication
                     double sensorScale = 0;
                     double sensorOffset = 0;
                     String sensorDescription = null;
-                    bool sensorEnabled;
+                    bool sensorEnabled = true;
                     parseSuccessful = false;
 
                     try
@@ -342,7 +345,6 @@ namespace ProcessingApplication
                     p.PrintUsageText("");
                     break;
             }
-            Console.Read();
         }
 
         void Initialise()
@@ -880,7 +882,7 @@ namespace ProcessingApplication
             }
         }
 
-        void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, bool enabled) //add sensor to database
+        void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, Boolean enabled) //add sensor to database
         {
             SqlConnection connection = new SqlConnection(connectionString);
             SqlParameter[] parameters = new SqlParameter[9];

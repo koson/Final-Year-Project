@@ -55,6 +55,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="DataSet.cs" />
     <Compile Include="DataItem.cs" />
+    <Compile Include="Chamber.cs" />
+    <Compile Include="Sensor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
