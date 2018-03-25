@@ -10,6 +10,9 @@ using System.Windows.Forms;
 using System.Xml.Serialization;
 using System.IO;
 using System.Diagnostics;
+using System.Timers;
+using System.Windows.Forms.DataVisualization.Charting;
+using System.Threading;
 
 namespace User_App
 {
@@ -18,122 +21,486 @@ namespace User_App
         [XmlArray("Chambers")]
         [XmlArrayItem("Chamber")]
         private Chamber[] chambers;
+
+        private int liveChartRange = 1;
+        private System.Timers.Timer liveChartTimer;
         public Form1()
         {
             InitializeComponent();
-            //DeserialiseProcessorOutput(callProcessor("produceGraph 1 \"2018-03-07 03:23:00\" \"2018-03-07 03:53:00\" false false"));
-            DeserialiseProcessorOutput(callProcessor("getEnv"));
+            liveChartTimer = new System.Timers.Timer
+            {
+                Interval = 10000
+            };
+            DeserialiseProcessorOutput(CallProcessor("getEnv"), "getEnv");
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            liveChartPicker.DisplayMember = "Text";
+            liveChartPicker.ValueMember = "Value";
+            customChartPicker.DisplayMember = "Text";
+            customChartPicker.ValueMember = "Value";
 
+            List<Object> items = new List<Object>();
+            for (int i = 0; i < chambers.Length; i++)
+            {
+                items.Add(new { Text = chambers[i].Name, Value = chambers[i] });
+            }
+
+            liveChartPicker.DataSource = items;
+            customChartPicker.DataSource = items;
+            liveChartTimer.Start();
+            liveChartTimer.Elapsed += new System.Timers.ElapsedEventHandler(OnTimer);
         }
 
         private void updateButton_Click(object sender, EventArgs e)
         {
-            String xml = "";
-            BuildGraphFromXML(xml);
+            Thread customChartThread = new Thread(new ThreadStart(UpdateCustomChart));
+            customChartThread.Start();
         }
 
-        void BuildGraphFromXML(String xml)
+        private void UpdateCustomChart()
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(DataSet[]));
-            TextReader reader = new StringReader(xml);
-            FileStream loadStream = new FileStream("C:\\Users\\Raife\\test.xml", FileMode.Open, FileAccess.Read);
-            Console.WriteLine(loadStream.ToString());
-            DataSet[] data = (DataSet[])serializer.Deserialize(loadStream);
-            liveChart.Series.Add("Temperature");
-            liveChart.Series.Add("Humidity");
-            liveChart.Series.Add("Pressure");
-            liveChart.Series["Temperature"].XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Time;
-            liveChart.Series["Temperature"].YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Double;
-            liveChart.Series["Humidity"].XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Time;
-            liveChart.Series["Humidity"].YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Double;
-            liveChart.Series["Pressure"].XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Time;
-            liveChart.Series["Pressure"].YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Double;
+            DataSet[] customChartData = null;
+            Chamber c = (Chamber)GetCustomChartPickerValue();
+            DateTime startDate = GetStartDatePickerValue();
+            DateTime endDate = GetEndDatePickerValue();
+            Boolean averageValues = true;
 
-            liveChart.Series["Temperature"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            liveChart.Series["Humidity"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            liveChart.Series["Pressure"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-
-            for (int j = 0; j < data[0].Data.Length; j++)
+            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" " + averageValues + "  false";
+            customChartData = DeserialiseProcessorOutput(CallProcessor(args));
+            if (customChartData != null)
             {
-                liveChart.Series["Temperature"].Points.AddXY(data[0].Data[j].Timestamp, data[0].Data[j].Reading);
+                SetCustomChart(customChartData);
             }
-            for (int j = 0; j < data[1].Data.Length; j++)
-            {
-                liveChart.Series["Humidity"].Points.AddXY(data[1].Data[j].Timestamp, data[0].Data[j].Reading);
-            }
-            for (int j = 0; j < data[2].Data.Length; j++)
-            {
-                liveChart.Series["Pressure"].Points.AddXY(data[2].Data[j].Timestamp, data[0].Data[j].Reading);
-            }
-        }
-
-        private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
-        {
-
         }
 
         private void chamberPickerBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //reload chart
+            this.RefreshLiveChart();
         }
 
-        private void liveChartTab_Click(object sender, EventArgs e)
+        private String CallProcessor(string args)
         {
-
-        }
-
-        private void customChart_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private String callProcessor(string args)
-        {
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = @"C:\Users\Raife\source\repos\Final-Year-Project\ProcessingApplication\ProcessingApplication\bin\Debug\ProcessingApplication.exe";
-            start.UseShellExecute = false;
-            start.Arguments = args;
-            start.RedirectStandardOutput = true;
+            ProcessStartInfo start = new ProcessStartInfo
+            {
+                FileName = @"C:\Users\Raife\source\repos\Final-Year-Project\ProcessingApplication\ProcessingApplication\bin\Debug\ProcessingApplication.exe",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                Arguments = args,
+                RedirectStandardOutput = true
+            };
             String result;
             using(Process process = Process.Start(start))
             {
                 using (StreamReader reader = process.StandardOutput)
                 {
                     result = reader.ReadToEnd();
-                    //debugBox.Text = result;
                 }
             }
             return result;
         }
 
-        private void DeserialiseProcessorOutput(String input)
+        private DataSet[] DeserialiseProcessorOutput(string input)
         {
             if(input.Contains("<Success value=\"True\" />"))
             {
-                debugBox.Text = "deserialisable";
-                input = input.Replace("<Success value=\"True\" />", null);
-                debugBox.Text += input;
+                input = input.Replace("<Success value=\"True\" />", null); //remove so we can deserialise XML string into object
+                //debugBox2.Text = input;
                 try
                 {
-                    XmlSerializer serializer = new XmlSerializer(typeof(Chamber[]));
+                    XmlSerializer serializer = new XmlSerializer(typeof(DataSet[]));
                     System.IO.StringReader reader = new System.IO.StringReader(input);
-                    chambers = (Chamber[]) serializer.Deserialize(reader);
-                    debugBox.Text = chambers[0].Name;
+                    return (DataSet[])serializer.Deserialize(reader);
                 }
                 catch (Exception e)
                 {
-                    debugBox.Text = e.ToString();
                 }
             }
             else
             {
                 //do not attempt deserialisation - show error box
-                debugBox.Text = "ERROR";
             }
+            return null;
+        }
+
+        private void DeserialiseProcessorOutput(String input, String originalCommand)
+        {
+            if(input.Contains("<Success value=\"True\" />"))
+            {
+                input = input.Replace("<Success value=\"True\" />", null); //remove so we can deserialise XML string into object
+                switch (originalCommand)
+                {
+                    case "getEnv":
+                        try
+                        {
+                            XmlSerializer serializer = new XmlSerializer(typeof(Chamber[]));
+                            System.IO.StringReader reader = new System.IO.StringReader(input);
+                            chambers = (Chamber[])serializer.Deserialize(reader);
+
+                        }
+                        catch (Exception e)
+                        {
+
+                        }
+                        break;
+
+                    case "addChamber":
+                        break;
+
+                    case "editChamber":
+                        break;
+
+                    case "removeChamber":
+                        break;
+
+                    case "addSensor":
+                        break;
+
+                    case "editSensor":
+                        break;
+
+                    case "removeSensor":
+                        break;
+                }
+            }
+            else
+            {
+                //do not attempt deserialisation - show error box
+            }
+        }
+
+        Chamber GetChamberByID(int chamberID)
+        {
+            Chamber c = null;
+            for (int i = 0; i < chambers.Length; i++)
+            {
+                if (chambers[i].ID.Equals(chamberID))
+                {
+                    c = chambers[i];
+                }
+            }
+            return c;
+        }
+
+        Sensor GetSensorByID(int sensorID)
+        {
+            Sensor s = null;
+            for (int i = 0; i < chambers.Length; i++)
+            {
+                for (int j = 0; j < chambers[i].sensors.Length; j++)
+                {
+                    if (chambers[i].sensors[j].ID.Equals(sensorID))
+                    {
+                        s = chambers[i].sensors[j];
+                    }
+                }
+            }
+            return s;
+        }
+
+        private void RefreshLiveChart()
+        {
+            DataSet[] liveChartData = null;
+            Chamber c = GetLiveChartPickerValue();
+            DateTime endDate = DateTime.Now;
+            DateTime startDate = endDate.AddHours(-liveChartRange);
+            Boolean averageValues = GetLiveChartAverage();
+
+            String processorArgs = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" " + averageValues + " false";
+            liveChartData = DeserialiseProcessorOutput(CallProcessor(processorArgs));
+            if (liveChartData != null || liveChartData.Length != 0)
+            {
+                this.SetLiveChart(liveChartData);
+            }
+        }
+
+        delegate Chamber GetLiveChartPickerValueCallback();
+        private Chamber GetLiveChartPickerValue()
+        {
+            if (this.liveChartPicker.InvokeRequired)
+            {
+                GetLiveChartPickerValueCallback p = new GetLiveChartPickerValueCallback(GetLiveChartPickerValue);
+                return (Chamber)this.Invoke(p, new object[] {});
+            }
+            else
+            {
+                return (Chamber)this.liveChartPicker.SelectedValue;
+            }
+        }
+
+        delegate Boolean GetLiveChartAverageCallback();
+        private Boolean GetLiveChartAverage()
+        {
+            if (this.liveChartAverage.InvokeRequired)
+            {
+                GetLiveChartAverageCallback p = new GetLiveChartAverageCallback(GetLiveChartAverage);
+                return (Boolean)this.Invoke(p, new object[] { });
+            }
+            else
+            {
+                return (Boolean)this.liveChartAverage.Checked;
+            }
+        }
+
+        delegate Boolean GetCustomChartAverageCallback();
+        private Boolean GetCustomChartAverage()
+        {
+            if (this.customChartAverage.InvokeRequired)
+            {
+                GetCustomChartAverageCallback p = new GetCustomChartAverageCallback(GetLiveChartAverage);
+                return (Boolean)this.Invoke(p, new object[] { });
+            }
+            else
+            {
+                return (Boolean)this.customChartAverage.Checked;
+            }
+        }
+
+        delegate Chamber GetCustomChartPickerValueCallback();
+        private Chamber GetCustomChartPickerValue()
+        {
+            if (this.customChartPicker.InvokeRequired)
+            {
+                GetCustomChartPickerValueCallback p = new GetCustomChartPickerValueCallback(GetCustomChartPickerValue);
+                return (Chamber)this.Invoke(p, new object[] { });
+            }
+            else
+            {
+                return (Chamber)this.customChartPicker.SelectedValue;
+            }
+        }
+
+        delegate DateTime GetStartDatePickerValueCallback();
+        private DateTime GetStartDatePickerValue()
+        {
+            if (this.startDatePicker.InvokeRequired)
+            {
+                GetStartDatePickerValueCallback p = new GetStartDatePickerValueCallback(GetStartDatePickerValue);
+                return (DateTime)this.Invoke(p, new object[] { });
+            }
+            else
+            {
+                return this.startDatePicker.Value;
+            }
+        }
+
+        delegate DateTime GetEndDatePickerValueCallback();
+        private DateTime GetEndDatePickerValue()
+        {
+            if (this.endDatePicker.InvokeRequired)
+            {
+                GetEndDatePickerValueCallback p = new GetEndDatePickerValueCallback(GetEndDatePickerValue);
+                return (DateTime)this.Invoke(p, new object[] { });
+            }
+            else
+            {
+                return this.endDatePicker.Value;
+            }
+        }
+
+        delegate void SetLiveChartCallback(DataSet[] data);
+        private void SetLiveChart(DataSet[] data)
+        {
+            if (this.liveChart.InvokeRequired)
+            {
+                SetLiveChartCallback callback = new SetLiveChartCallback(SetLiveChart);
+                this.Invoke(callback, new object[] {data });
+            }
+            else
+            {
+                this.liveChart.Series.Clear();
+                for (int i = 0; i < data.Length; i++)
+                {
+                    switch (GetSensorByID(data[i].SensorID).SensorType)
+                    {
+                        case 0:
+                            this.liveChart.Series.Add("Temperature Sensor " + data[i].SensorID);
+                            this.liveChart.Series["Temperature Sensor " + data[i].SensorID].XValueType = ChartValueType.Time;
+                            this.liveChart.Series["Temperature Sensor " + data[i].SensorID].YValueType = ChartValueType.Double;
+                            this.liveChart.Series["Temperature Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
+                            for (int j = 0; j < data[i].Data.Length; j++)
+                            {
+                                this.liveChart.Series["Temperature Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp, data[i].Data[j].Reading);
+                            }
+                            break;
+
+                        case 1:
+                            this.liveChart.Series.Add("Pressure Sensor " + data[i].SensorID);
+                            this.liveChart.Series["Pressure Sensor " + data[i].SensorID].XValueType = ChartValueType.Time;
+                            this.liveChart.Series["Pressure Sensor " + data[i].SensorID].YValueType = ChartValueType.Double;
+                            this.liveChart.Series["Pressure Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
+                            this.liveChart.Series["Pressure Sensor " + data[i].SensorID].YAxisType = AxisType.Secondary;
+                            for (int j = 0; j < data[i].Data.Length; j++)
+                            {
+                                this.liveChart.Series["Pressure Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp, data[i].Data[j].Reading);
+                            }
+                            break;
+
+                        case 2:
+                            this.liveChart.Series.Add("Humidity Sensor " + data[i].SensorID);
+                            this.liveChart.Series["Humidity Sensor " + data[i].SensorID].XValueType = ChartValueType.Time;
+                            this.liveChart.Series["Humidity Sensor " + data[i].SensorID].YValueType = ChartValueType.Double;
+                            this.liveChart.Series["Humidity Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
+                            for (int j = 0; j < data[i].Data.Length; j++)
+                            {
+                                this.liveChart.Series["Humidity Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp, data[i].Data[j].Reading);
+                            }
+                            break;
+                    }
+                }
+                this.liveChart.Update();
+            }
+            
+        }
+
+        delegate void SetCustomChartCallback(DataSet[] data);
+        private void SetCustomChart(DataSet[] data)
+        {
+            if (this.customChart.InvokeRequired)
+            {
+                SetCustomChartCallback callback = new SetCustomChartCallback(SetCustomChart);
+                this.Invoke(callback, new object[] { data });
+            }
+            else
+            {
+                this.customChart.Series.Clear();
+                for(int i = 0; i < data.Length; i++)
+                {
+                    switch (GetSensorByID(data[i].SensorID).SensorType)
+                    {
+                        case 0:
+                            this.customChart.Series.Add("Temperature Sensor " + data[i].SensorID);
+                            this.customChart.Series["Temperature Sensor " + data[i].SensorID].XValueType = ChartValueType.DateTime;
+                            this.customChart.Series["Temperature Sensor " + data[i].SensorID].YValueType = ChartValueType.Double;
+                            this.customChart.Series["Temperature Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
+                            for (int j = 0; j < data[i].Data.Length; j++)
+                            {
+                                this.customChart.Series["Temperature Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd hh:mm"), data[i].Data[j].Reading);
+                            }
+                            break;
+
+                        case 1:
+                            this.customChart.Series.Add("Pressure Sensor " + data[i].SensorID);
+                            this.customChart.Series["Pressure Sensor " + data[i].SensorID].XValueType = ChartValueType.DateTime;
+                            this.customChart.Series["Pressure Sensor " + data[i].SensorID].YValueType = ChartValueType.Double;
+                            this.customChart.Series["Pressure Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
+                            this.customChart.Series["Pressure Sensor " + data[i].SensorID].YAxisType = AxisType.Secondary;
+                            for (int j = 0; j < data[i].Data.Length; j++)
+                            {
+                                this.customChart.Series["Pressure Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd hh:mm"), data[i].Data[j].Reading);
+                            }
+                            break;
+
+                        case 2:
+                            this.customChart.Series.Add("Humidity Sensor " + data[i].SensorID);
+                            this.customChart.Series["Humidity Sensor " + data[i].SensorID].XValueType = ChartValueType.DateTime;
+                            this.customChart.Series["Humidity Sensor " + data[i].SensorID].YValueType = ChartValueType.Double;
+                            this.customChart.Series["Humidity Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
+                            for (int j = 0; j < data[i].Data.Length; j++)
+                            {
+                                this.customChart.Series["Humidity Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd hh:mm"), data[i].Data[j].Reading);
+                            }
+                            break;
+                    }
+                }
+                this.customChart.Update();
+            }
+        }
+
+        private void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
+        {
+            RefreshLiveChart();
+        }
+
+        private void tabControl1_Selected(object sender, TabControlEventArgs e)
+        {
+            if(e.TabPage == liveChartTab)
+            {
+                liveChartTimer.Start();
+            }
+            else
+            {
+                liveChartTimer.Stop();
+            }
+        }
+
+        private void tenSecondsItem_Click(object sender, EventArgs e)
+        {
+            liveChartTimer.Interval = 10000;
+            liveChartTimer.Stop();
+            liveChartTimer.Start();
+        }
+
+        private void twentySecondsItem_Click(object sender, EventArgs e)
+        {
+            liveChartTimer.Interval = 20000;
+            liveChartTimer.Stop();
+            liveChartTimer.Start();
+        }
+
+        private void thirtySecondsItem_Click(object sender, EventArgs e)
+        {
+            liveChartTimer.Interval = 30000;
+            liveChartTimer.Stop();
+            liveChartTimer.Start();
+        }
+
+        private void sixtySecondsItem_Click(object sender, EventArgs e)
+        {
+            liveChartTimer.Interval = 60000;
+            liveChartTimer.Stop();
+            liveChartTimer.Start();
+        }
+
+        private void oneHourRange_Click(object sender, EventArgs e)
+        {
+            liveChartRange = 1;
+        }
+
+        private void twoHourRange_Click(object sender, EventArgs e)
+        {
+            liveChartRange = 2;
+        }
+
+        private void sixHourRange_Click(object sender, EventArgs e)
+        {
+            liveChartRange = 6;
+        }
+
+        private void twelveHourRange_Click(object sender, EventArgs e)
+        {
+            liveChartRange = 12;
+        }
+
+        private void twentyFourHourRange_Click(object sender, EventArgs e)
+        {
+            liveChartRange = 24;
+        }
+
+        private void exportToExcelBtn_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+            saveFileDialog1.Filter = "Excel Workbook|*.xlsm";
+            saveFileDialog1.Title = "Save Custom Chart";
+            saveFileDialog1.ShowDialog();
+            if(saveFileDialog1.FileName != "")
+            {
+                debugBox.Text = saveFileDialog1.FileName;
+                Thread saveChart = new Thread(() => SaveCustomChart(saveFileDialog1.FileName));
+                saveChart.Start();
+            }
+        }
+
+        private void SaveCustomChart(String filename)
+        {
+            Chamber c = GetCustomChartPickerValue();
+            DateTime startDate = GetStartDatePickerValue();
+            DateTime endDate = GetEndDatePickerValue();
+            Boolean averageValues = GetCustomChartAverage();
+            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd hh:mm") + "\" \"" + endDate.ToString("yyyy-MM-dd hh:mm") + "\" " + averageValues + " true \"" + filename + "\"";
+            CallProcessor(args);
         }
     }
 }

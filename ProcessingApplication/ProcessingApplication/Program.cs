@@ -24,6 +24,7 @@ namespace ProcessingApplication
         private String connectionString;
         bool debug;
         bool interactive;
+
         static void Main(string[] args)
         {
             Program p = new Program();
@@ -33,17 +34,17 @@ namespace ProcessingApplication
 
             if(args.Length > 1)
             {
-                            if(args[0] == "-i" || args[1] == "-i") //interactive mode
-            {
-                offset++;
-                p.interactive = true;
-            }
+                if(args[0] == "-i" || args[1] == "-i") //interactive mode
+                {
+                    offset++;
+                    p.interactive = true;
+                }
 
-            if(args[0] == "-d" || args[1] == "-d") //debug mode
-            {
-                p.debug = true;
-                offset++;
-            }
+                if(args[0] == "-d" || args[1] == "-d") //debug mode
+                {
+                    p.debug = true;
+                    offset++;
+                }
             }
 
             switch (args[0+offset]) {
@@ -331,7 +332,7 @@ namespace ProcessingApplication
                     break;
 
                 case "help":
-                    if (args.Length == 2)
+                    if (args.Length == (2+offset))
                     {
                         p.PrintUsageText(args[1+offset]);
                     }
@@ -361,7 +362,19 @@ namespace ProcessingApplication
             switch (commandName)
             {
                 case "general":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [command] [options]");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe [-i] [-d] [command] [options]");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Commands:");
+                    Console.WriteLine(" - getEnv: Retrieve all chambers and sensors from database");
+                    Console.WriteLine(" - produceGraph: Produce an XML representation of graph data");
+                    Console.WriteLine(" - addChamber: Create a new chamber in the database");
+                    Console.WriteLine(" - editChamber: Edit an existing chamber in the database");
+                    Console.WriteLine(" - removeChamber: Remove a chamber from the database (will also delete associated sensors and collected data)");
+                    Console.WriteLine(" - addSensor: Create a new sensor in the database");
+                    Console.WriteLine(" - editSensor: Edit an existing sensor in the database");
+                    Console.WriteLine(" - removeSensor: remove a sensor from the database (will also delete collected data for this sensor)");
+
+
                     break;
 
                 case "produceGraph":
@@ -440,6 +453,16 @@ namespace ProcessingApplication
                     break;
                 default:
                     Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [-i] [command] [options]");
+                    Console.WriteLine("\n");
+                    Console.WriteLine("Commands:");
+                    Console.WriteLine(" - getEnv: Retrieve all chambers and sensors from database");
+                    Console.WriteLine(" - produceGraph: Produce an XML representation of graph data");
+                    Console.WriteLine(" - addChamber: Create a new chamber in the database");
+                    Console.WriteLine(" - editChamber: Edit an existing chamber in the database");
+                    Console.WriteLine(" - removeChamber: Remove a chamber from the database (will also delete associated sensors and collected data)");
+                    Console.WriteLine(" - addSensor: Create a new sensor in the database");
+                    Console.WriteLine(" - editSensor: Edit an existing sensor in the database");
+                    Console.WriteLine(" - removeSensor: remove a sensor from the database (will also delete collected data for this sensor)");
                     break;
             }
             
@@ -614,60 +637,12 @@ namespace ProcessingApplication
             List<DataSet> finalValues = new List<DataSet>();
             for (int i = 0; i < c.sensors.Length; i++)
             {
-                switch (c.sensors[i].SensorType)
+                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
+                if(tempDataSet.Data.Length != 0 && average)
                 {
-                    case 0: //temperature
-                        DataSet tempAverage = GetDataForSensor(c.sensors[i], start, end);
-                        if(tempAverage.Data.Length != 0 && average)
-                        {
-                            tempDataSet = ProduceMeanValues(tempAverage);
-                            tempDataSet.SensorID = c.sensors[i].ID;
-                        }
-                        else
-                        {
-                            if (tempAverage.Data.Length != 0)
-                            {
-                                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
-                                tempDataSet.SensorID = c.sensors[i].ID;
-                            }
-                        }
-                        break;
-                    case 1: //pressure
-                        DataSet pressureAverage = GetDataForSensor(c.sensors[i], start, end);
-                        if(pressureAverage.Data.Length != 0 && average)
-                        {
-                            tempDataSet = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
-                            tempDataSet.SensorID = c.sensors[i].ID;
-                        }
-                        else
-                        {
-                            if (pressureAverage.Data.Length != 0)
-                            {
-                                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
-                                tempDataSet.SensorID = c.sensors[i].ID;
-                            }
-                        }
-                        break;
-                    case 2: //humidity
-                        DataSet humidityAverage = GetDataForSensor(c.sensors[i], start, end);
-                        if(humidityAverage.Data.Length != 0 && average)
-                        {
-                            tempDataSet = ProduceMeanValues(GetDataForSensor(c.sensors[i], start, end));
-                            tempDataSet.SensorID = c.sensors[i].ID;
-                        }
-                        else
-                        {
-                            if(humidityAverage.Data.Length != 0)
-                            {
-                                tempDataSet = GetDataForSensor(c.sensors[i], start, end);
-                                tempDataSet.SensorID = c.sensors[i].ID;
-                            }
-                        } 
-                        break;
-                    default: //throw error
-                        throw new Exception(); //find more specific error - pass error back to GUI or event log
-                        //break;
+                    tempDataSet = ProduceMeanValues(tempDataSet);  
                 }
+                tempDataSet.SensorID = c.sensors[i].ID;
                 finalValues.Add(tempDataSet);
             }
             return finalValues.ToArray();

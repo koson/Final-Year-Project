@@ -30,25 +30,23 @@
         {
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.liveChartTab = new System.Windows.Forms.TabPage();
             this.liveChartSplitContainer = new System.Windows.Forms.SplitContainer();
             this.liveChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
-            this.label2 = new System.Windows.Forms.Label();
-            this.checkedListBox1 = new System.Windows.Forms.CheckedListBox();
+            this.liveChartAverage = new System.Windows.Forms.CheckBox();
             this.chamberPickerLabel = new System.Windows.Forms.Label();
-            this.chamberPickerBox = new System.Windows.Forms.ComboBox();
+            this.liveChartPicker = new System.Windows.Forms.ComboBox();
             this.customChartTab = new System.Windows.Forms.TabPage();
             this.customChartSplitContainer = new System.Windows.Forms.SplitContainer();
             this.customChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.customChartAverage = new System.Windows.Forms.CheckBox();
             this.endDatePicker = new System.Windows.Forms.DateTimePicker();
             this.label1 = new System.Windows.Forms.Label();
             this.startDatePicker = new System.Windows.Forms.DateTimePicker();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.customChartPicker = new System.Windows.Forms.ComboBox();
             this.startDateLabel = new System.Windows.Forms.Label();
             this.updateButton = new System.Windows.Forms.Button();
             this.endDateLabel = new System.Windows.Forms.Label();
@@ -69,16 +67,16 @@
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.liveChartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.updateIntervalToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.secondsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.secondsToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.secondsToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.secondsToolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
+            this.tenSecondsItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.twentySecondsItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.thirtySecondsItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.sixtySecondsItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rangeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.hourToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.hourToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.hourToolStripMenuItem4 = new System.Windows.Forms.ToolStripMenuItem();
-            this.hourToolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.hourToolStripMenuItem3 = new System.Windows.Forms.ToolStripMenuItem();
+            this.oneHourRange = new System.Windows.Forms.ToolStripMenuItem();
+            this.twoHourRange = new System.Windows.Forms.ToolStripMenuItem();
+            this.sixHourRange = new System.Windows.Forms.ToolStripMenuItem();
+            this.twelveHourRange = new System.Windows.Forms.ToolStripMenuItem();
+            this.twentyFourHourRange = new System.Windows.Forms.ToolStripMenuItem();
             this.debugBox = new System.Windows.Forms.RichTextBox();
             this.tabControl1.SuspendLayout();
             this.liveChartTab.SuspendLayout();
@@ -108,6 +106,7 @@
             this.tabControl1.Size = new System.Drawing.Size(1664, 782);
             this.tabControl1.SizeMode = System.Windows.Forms.TabSizeMode.FillToRight;
             this.tabControl1.TabIndex = 2;
+            this.tabControl1.Selected += new System.Windows.Forms.TabControlEventHandler(this.tabControl1_Selected);
             // 
             // liveChartTab
             // 
@@ -119,7 +118,6 @@
             this.liveChartTab.TabIndex = 0;
             this.liveChartTab.Text = "Live Chart";
             this.liveChartTab.UseVisualStyleBackColor = true;
-            this.liveChartTab.Click += new System.EventHandler(this.liveChartTab_Click);
             // 
             // liveChartSplitContainer
             // 
@@ -137,11 +135,9 @@
             // 
             // liveChartSplitContainer.Panel2
             // 
-            this.liveChartSplitContainer.Panel2.Controls.Add(this.debugBox);
-            this.liveChartSplitContainer.Panel2.Controls.Add(this.label2);
-            this.liveChartSplitContainer.Panel2.Controls.Add(this.checkedListBox1);
+            this.liveChartSplitContainer.Panel2.Controls.Add(this.liveChartAverage);
             this.liveChartSplitContainer.Panel2.Controls.Add(this.chamberPickerLabel);
-            this.liveChartSplitContainer.Panel2.Controls.Add(this.chamberPickerBox);
+            this.liveChartSplitContainer.Panel2.Controls.Add(this.liveChartPicker);
             this.liveChartSplitContainer.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.liveChartSplitContainer.Panel2MinSize = 300;
             this.liveChartSplitContainer.Size = new System.Drawing.Size(1656, 756);
@@ -150,6 +146,16 @@
             // 
             // liveChart
             // 
+            chartArea1.AxisY.IsStartedFromZero = false;
+            chartArea1.AxisY.MajorGrid.Interval = 20D;
+            chartArea1.AxisY.MajorTickMark.Interval = 10D;
+            chartArea1.AxisY.Maximum = 100D;
+            chartArea1.AxisY.Minimum = -40D;
+            chartArea1.AxisY.Title = "Temperature (C) & Relative Humidity (%)";
+            chartArea1.AxisY2.MajorTickMark.Interval = 200D;
+            chartArea1.AxisY2.Maximum = 1000D;
+            chartArea1.AxisY2.Minimum = 0D;
+            chartArea1.AxisY2.Title = "Pressure (mbar) (a)";
             chartArea1.Name = "ChartArea1";
             this.liveChart.ChartAreas.Add(chartArea1);
             this.liveChart.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -157,30 +163,19 @@
             this.liveChart.Legends.Add(legend1);
             this.liveChart.Location = new System.Drawing.Point(0, 0);
             this.liveChart.Name = "liveChart";
-            series1.ChartArea = "ChartArea1";
-            series1.Legend = "Legend1";
-            series1.Name = "Series1";
-            this.liveChart.Series.Add(series1);
             this.liveChart.Size = new System.Drawing.Size(1348, 754);
             this.liveChart.TabIndex = 1;
             this.liveChart.Text = "chart1";
             // 
-            // label2
+            // liveChartAverage
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(25, 144);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(62, 13);
-            this.label2.TabIndex = 7;
-            this.label2.Text = "Data Series";
-            // 
-            // checkedListBox1
-            // 
-            this.checkedListBox1.FormattingEnabled = true;
-            this.checkedListBox1.Location = new System.Drawing.Point(25, 163);
-            this.checkedListBox1.Name = "checkedListBox1";
-            this.checkedListBox1.Size = new System.Drawing.Size(120, 94);
-            this.checkedListBox1.TabIndex = 6;
+            this.liveChartAverage.AutoSize = true;
+            this.liveChartAverage.Location = new System.Drawing.Point(25, 152);
+            this.liveChartAverage.Name = "liveChartAverage";
+            this.liveChartAverage.Size = new System.Drawing.Size(120, 17);
+            this.liveChartAverage.TabIndex = 10;
+            this.liveChartAverage.Text = "Per-Minute Average";
+            this.liveChartAverage.UseVisualStyleBackColor = true;
             // 
             // chamberPickerLabel
             // 
@@ -191,14 +186,14 @@
             this.chamberPickerLabel.TabIndex = 5;
             this.chamberPickerLabel.Text = "Chamber";
             // 
-            // chamberPickerBox
+            // liveChartPicker
             // 
-            this.chamberPickerBox.FormattingEnabled = true;
-            this.chamberPickerBox.Location = new System.Drawing.Point(6, 45);
-            this.chamberPickerBox.Name = "chamberPickerBox";
-            this.chamberPickerBox.Size = new System.Drawing.Size(291, 21);
-            this.chamberPickerBox.TabIndex = 4;
-            this.chamberPickerBox.SelectedIndexChanged += new System.EventHandler(this.chamberPickerBox_SelectedIndexChanged);
+            this.liveChartPicker.FormattingEnabled = true;
+            this.liveChartPicker.Location = new System.Drawing.Point(6, 45);
+            this.liveChartPicker.Name = "liveChartPicker";
+            this.liveChartPicker.Size = new System.Drawing.Size(291, 21);
+            this.liveChartPicker.TabIndex = 4;
+            this.liveChartPicker.SelectedIndexChanged += new System.EventHandler(this.chamberPickerBox_SelectedIndexChanged);
             // 
             // customChartTab
             // 
@@ -227,10 +222,12 @@
             // 
             // customChartSplitContainer.Panel2
             // 
+            this.customChartSplitContainer.Panel2.Controls.Add(this.debugBox);
+            this.customChartSplitContainer.Panel2.Controls.Add(this.customChartAverage);
             this.customChartSplitContainer.Panel2.Controls.Add(this.endDatePicker);
             this.customChartSplitContainer.Panel2.Controls.Add(this.label1);
             this.customChartSplitContainer.Panel2.Controls.Add(this.startDatePicker);
-            this.customChartSplitContainer.Panel2.Controls.Add(this.comboBox1);
+            this.customChartSplitContainer.Panel2.Controls.Add(this.customChartPicker);
             this.customChartSplitContainer.Panel2.Controls.Add(this.startDateLabel);
             this.customChartSplitContainer.Panel2.Controls.Add(this.updateButton);
             this.customChartSplitContainer.Panel2.Controls.Add(this.endDateLabel);
@@ -242,6 +239,21 @@
             // 
             // customChart
             // 
+            chartArea2.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.True;
+            chartArea2.AxisX.IntervalAutoMode = System.Windows.Forms.DataVisualization.Charting.IntervalAutoMode.VariableCount;
+            chartArea2.AxisX.MajorGrid.Interval = 0D;
+            chartArea2.AxisY.Interval = 20D;
+            chartArea2.AxisY.IsStartedFromZero = false;
+            chartArea2.AxisY.MajorGrid.Interval = 20D;
+            chartArea2.AxisY.MajorTickMark.Interval = 20D;
+            chartArea2.AxisY.Maximum = 100D;
+            chartArea2.AxisY.Minimum = -40D;
+            chartArea2.AxisY.Title = "Temperature (C) & Relative Humidity (%)";
+            chartArea2.AxisY2.MajorGrid.Enabled = false;
+            chartArea2.AxisY2.MajorTickMark.Interval = 200D;
+            chartArea2.AxisY2.Maximum = 1000D;
+            chartArea2.AxisY2.Minimum = 0D;
+            chartArea2.AxisY2.Title = "Pressure (mbar) (a)";
             chartArea2.Name = "ChartArea1";
             this.customChart.ChartAreas.Add(chartArea2);
             this.customChart.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -249,14 +261,19 @@
             this.customChart.Legends.Add(legend2);
             this.customChart.Location = new System.Drawing.Point(0, 0);
             this.customChart.Name = "customChart";
-            series2.ChartArea = "ChartArea1";
-            series2.Legend = "Legend1";
-            series2.Name = "Series1";
-            this.customChart.Series.Add(series2);
             this.customChart.Size = new System.Drawing.Size(1348, 754);
             this.customChart.TabIndex = 13;
             this.customChart.Text = "chart1";
-            this.customChart.Click += new System.EventHandler(this.customChart_Click);
+            // 
+            // customChartAverage
+            // 
+            this.customChartAverage.AutoSize = true;
+            this.customChartAverage.Location = new System.Drawing.Point(37, 191);
+            this.customChartAverage.Name = "customChartAverage";
+            this.customChartAverage.Size = new System.Drawing.Size(120, 17);
+            this.customChartAverage.TabIndex = 18;
+            this.customChartAverage.Text = "Per-Minute Average";
+            this.customChartAverage.UseVisualStyleBackColor = true;
             // 
             // endDatePicker
             // 
@@ -280,23 +297,23 @@
             // 
             this.startDatePicker.CustomFormat = "dd:MM:yyyy HH:mm:ss";
             this.startDatePicker.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.startDatePicker.Location = new System.Drawing.Point(23, 151);
+            this.startDatePicker.Location = new System.Drawing.Point(13, 108);
             this.startDatePicker.Name = "startDatePicker";
             this.startDatePicker.Size = new System.Drawing.Size(137, 20);
             this.startDatePicker.TabIndex = 8;
             // 
-            // comboBox1
+            // customChartPicker
             // 
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(84, 44);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(121, 21);
-            this.comboBox1.TabIndex = 15;
+            this.customChartPicker.FormattingEnabled = true;
+            this.customChartPicker.Location = new System.Drawing.Point(84, 44);
+            this.customChartPicker.Name = "customChartPicker";
+            this.customChartPicker.Size = new System.Drawing.Size(121, 21);
+            this.customChartPicker.TabIndex = 15;
             // 
             // startDateLabel
             // 
             this.startDateLabel.AutoSize = true;
-            this.startDateLabel.Location = new System.Drawing.Point(54, 132);
+            this.startDateLabel.Location = new System.Drawing.Point(57, 92);
             this.startDateLabel.Name = "startDateLabel";
             this.startDateLabel.Size = new System.Drawing.Size(55, 13);
             this.startDateLabel.TabIndex = 10;
@@ -304,17 +321,18 @@
             // 
             // updateButton
             // 
-            this.updateButton.Location = new System.Drawing.Point(60, 194);
+            this.updateButton.Location = new System.Drawing.Point(37, 161);
             this.updateButton.Name = "updateButton";
             this.updateButton.Size = new System.Drawing.Size(75, 23);
             this.updateButton.TabIndex = 14;
             this.updateButton.Text = "Update";
             this.updateButton.UseVisualStyleBackColor = true;
+            this.updateButton.Click += new System.EventHandler(this.updateButton_Click);
             // 
             // endDateLabel
             // 
             this.endDateLabel.AutoSize = true;
-            this.endDateLabel.Location = new System.Drawing.Point(190, 89);
+            this.endDateLabel.Location = new System.Drawing.Point(193, 92);
             this.endDateLabel.Name = "endDateLabel";
             this.endDateLabel.Size = new System.Drawing.Size(52, 13);
             this.endDateLabel.TabIndex = 11;
@@ -322,12 +340,13 @@
             // 
             // exportToExcelBtn
             // 
-            this.exportToExcelBtn.Location = new System.Drawing.Point(170, 151);
+            this.exportToExcelBtn.Location = new System.Drawing.Point(183, 161);
             this.exportToExcelBtn.Name = "exportToExcelBtn";
             this.exportToExcelBtn.Size = new System.Drawing.Size(75, 23);
             this.exportToExcelBtn.TabIndex = 12;
             this.exportToExcelBtn.Text = "Export";
             this.exportToExcelBtn.UseVisualStyleBackColor = true;
+            this.exportToExcelBtn.Click += new System.EventHandler(this.exportToExcelBtn_Click);
             // 
             // fileToolStripMenuItem
             // 
@@ -340,7 +359,7 @@
             // quitToolStripMenuItem
             // 
             this.quitToolStripMenuItem.Name = "quitToolStripMenuItem";
-            this.quitToolStripMenuItem.Size = new System.Drawing.Size(97, 22);
+            this.quitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.quitToolStripMenuItem.Text = "Quit";
             // 
             // editToolStripMenuItem
@@ -359,7 +378,7 @@
             this.chamberToolStripMenuItem,
             this.sensorToolStripMenuItem});
             this.existingChamberToolStripMenuItem.Name = "existingChamberToolStripMenuItem";
-            this.existingChamberToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.existingChamberToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.existingChamberToolStripMenuItem.Text = "Create New";
             // 
             // chamberToolStripMenuItem
@@ -380,7 +399,7 @@
             this.chamberToolStripMenuItem1,
             this.sensorToolStripMenuItem1});
             this.editExistingToolStripMenuItem.Name = "editExistingToolStripMenuItem";
-            this.editExistingToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.editExistingToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.editExistingToolStripMenuItem.Text = "Edit Existing";
             // 
             // chamberToolStripMenuItem1
@@ -401,7 +420,7 @@
             this.chamberToolStripMenuItem2,
             this.sensorToolStripMenuItem2});
             this.deleteExistingToolStripMenuItem.Name = "deleteExistingToolStripMenuItem";
-            this.deleteExistingToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
+            this.deleteExistingToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.deleteExistingToolStripMenuItem.Text = "Delete Existing";
             // 
             // chamberToolStripMenuItem2
@@ -442,92 +461,101 @@
             this.updateIntervalToolStripMenuItem1,
             this.rangeToolStripMenuItem});
             this.liveChartToolStripMenuItem.Name = "liveChartToolStripMenuItem";
-            this.liveChartToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
+            this.liveChartToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.liveChartToolStripMenuItem.Text = "Live Chart";
             // 
             // updateIntervalToolStripMenuItem1
             // 
             this.updateIntervalToolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.secondsToolStripMenuItem,
-            this.secondsToolStripMenuItem1,
-            this.secondsToolStripMenuItem2,
-            this.secondsToolStripMenuItem3});
+            this.tenSecondsItem,
+            this.twentySecondsItem,
+            this.thirtySecondsItem,
+            this.sixtySecondsItem});
             this.updateIntervalToolStripMenuItem1.Name = "updateIntervalToolStripMenuItem1";
             this.updateIntervalToolStripMenuItem1.Size = new System.Drawing.Size(154, 22);
             this.updateIntervalToolStripMenuItem1.Text = "Update Interval";
             // 
-            // secondsToolStripMenuItem
+            // tenSecondsItem
             // 
-            this.secondsToolStripMenuItem.Name = "secondsToolStripMenuItem";
-            this.secondsToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
-            this.secondsToolStripMenuItem.Text = "10 Seconds";
+            this.tenSecondsItem.Name = "tenSecondsItem";
+            this.tenSecondsItem.Size = new System.Drawing.Size(152, 22);
+            this.tenSecondsItem.Text = "10 Seconds";
+            this.tenSecondsItem.Click += new System.EventHandler(this.tenSecondsItem_Click);
             // 
-            // secondsToolStripMenuItem1
+            // twentySecondsItem
             // 
-            this.secondsToolStripMenuItem1.Name = "secondsToolStripMenuItem1";
-            this.secondsToolStripMenuItem1.Size = new System.Drawing.Size(133, 22);
-            this.secondsToolStripMenuItem1.Text = "20 Seconds";
+            this.twentySecondsItem.Name = "twentySecondsItem";
+            this.twentySecondsItem.Size = new System.Drawing.Size(152, 22);
+            this.twentySecondsItem.Text = "20 Seconds";
+            this.twentySecondsItem.Click += new System.EventHandler(this.twentySecondsItem_Click);
             // 
-            // secondsToolStripMenuItem2
+            // thirtySecondsItem
             // 
-            this.secondsToolStripMenuItem2.Name = "secondsToolStripMenuItem2";
-            this.secondsToolStripMenuItem2.Size = new System.Drawing.Size(133, 22);
-            this.secondsToolStripMenuItem2.Text = "30 Seconds";
+            this.thirtySecondsItem.Name = "thirtySecondsItem";
+            this.thirtySecondsItem.Size = new System.Drawing.Size(152, 22);
+            this.thirtySecondsItem.Text = "30 Seconds";
+            this.thirtySecondsItem.Click += new System.EventHandler(this.thirtySecondsItem_Click);
             // 
-            // secondsToolStripMenuItem3
+            // sixtySecondsItem
             // 
-            this.secondsToolStripMenuItem3.Name = "secondsToolStripMenuItem3";
-            this.secondsToolStripMenuItem3.Size = new System.Drawing.Size(133, 22);
-            this.secondsToolStripMenuItem3.Text = "60 Seconds";
+            this.sixtySecondsItem.Name = "sixtySecondsItem";
+            this.sixtySecondsItem.Size = new System.Drawing.Size(152, 22);
+            this.sixtySecondsItem.Text = "60 Seconds";
+            this.sixtySecondsItem.Click += new System.EventHandler(this.sixtySecondsItem_Click);
             // 
             // rangeToolStripMenuItem
             // 
             this.rangeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.hourToolStripMenuItem,
-            this.hourToolStripMenuItem1,
-            this.hourToolStripMenuItem4,
-            this.hourToolStripMenuItem2,
-            this.hourToolStripMenuItem3});
+            this.oneHourRange,
+            this.twoHourRange,
+            this.sixHourRange,
+            this.twelveHourRange,
+            this.twentyFourHourRange});
             this.rangeToolStripMenuItem.Name = "rangeToolStripMenuItem";
             this.rangeToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
             this.rangeToolStripMenuItem.Text = "Range";
             // 
-            // hourToolStripMenuItem
+            // oneHourRange
             // 
-            this.hourToolStripMenuItem.Name = "hourToolStripMenuItem";
-            this.hourToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
-            this.hourToolStripMenuItem.Text = "1 Hour";
+            this.oneHourRange.Name = "oneHourRange";
+            this.oneHourRange.Size = new System.Drawing.Size(152, 22);
+            this.oneHourRange.Text = "1 Hour";
+            this.oneHourRange.Click += new System.EventHandler(this.oneHourRange_Click);
             // 
-            // hourToolStripMenuItem1
+            // twoHourRange
             // 
-            this.hourToolStripMenuItem1.Name = "hourToolStripMenuItem1";
-            this.hourToolStripMenuItem1.Size = new System.Drawing.Size(116, 22);
-            this.hourToolStripMenuItem1.Text = "2 Hour";
+            this.twoHourRange.Name = "twoHourRange";
+            this.twoHourRange.Size = new System.Drawing.Size(152, 22);
+            this.twoHourRange.Text = "2 Hour";
+            this.twoHourRange.Click += new System.EventHandler(this.twoHourRange_Click);
             // 
-            // hourToolStripMenuItem4
+            // sixHourRange
             // 
-            this.hourToolStripMenuItem4.Name = "hourToolStripMenuItem4";
-            this.hourToolStripMenuItem4.Size = new System.Drawing.Size(116, 22);
-            this.hourToolStripMenuItem4.Text = "6 Hour";
+            this.sixHourRange.Name = "sixHourRange";
+            this.sixHourRange.Size = new System.Drawing.Size(152, 22);
+            this.sixHourRange.Text = "6 Hour";
+            this.sixHourRange.Click += new System.EventHandler(this.sixHourRange_Click);
             // 
-            // hourToolStripMenuItem2
+            // twelveHourRange
             // 
-            this.hourToolStripMenuItem2.Name = "hourToolStripMenuItem2";
-            this.hourToolStripMenuItem2.Size = new System.Drawing.Size(116, 22);
-            this.hourToolStripMenuItem2.Text = "12 Hour";
+            this.twelveHourRange.Name = "twelveHourRange";
+            this.twelveHourRange.Size = new System.Drawing.Size(152, 22);
+            this.twelveHourRange.Text = "12 Hour";
+            this.twelveHourRange.Click += new System.EventHandler(this.twelveHourRange_Click);
             // 
-            // hourToolStripMenuItem3
+            // twentyFourHourRange
             // 
-            this.hourToolStripMenuItem3.Name = "hourToolStripMenuItem3";
-            this.hourToolStripMenuItem3.Size = new System.Drawing.Size(116, 22);
-            this.hourToolStripMenuItem3.Text = "24 Hour";
+            this.twentyFourHourRange.Name = "twentyFourHourRange";
+            this.twentyFourHourRange.Size = new System.Drawing.Size(152, 22);
+            this.twentyFourHourRange.Text = "24 Hour";
+            this.twentyFourHourRange.Click += new System.EventHandler(this.twentyFourHourRange_Click);
             // 
             // debugBox
             // 
-            this.debugBox.Location = new System.Drawing.Point(25, 291);
+            this.debugBox.Location = new System.Drawing.Point(13, 251);
             this.debugBox.Name = "debugBox";
-            this.debugBox.Size = new System.Drawing.Size(255, 252);
-            this.debugBox.TabIndex = 9;
+            this.debugBox.Size = new System.Drawing.Size(280, 496);
+            this.debugBox.TabIndex = 19;
             this.debugBox.Text = "";
             // 
             // Form1
@@ -571,7 +599,7 @@
         private System.Windows.Forms.TabPage liveChartTab;
         private System.Windows.Forms.TabPage customChartTab;
         private System.Windows.Forms.Label chamberPickerLabel;
-        private System.Windows.Forms.ComboBox chamberPickerBox;
+        private System.Windows.Forms.ComboBox liveChartPicker;
         private System.Windows.Forms.Button exportToExcelBtn;
         private System.Windows.Forms.Label endDateLabel;
         private System.Windows.Forms.Label startDateLabel;
@@ -580,7 +608,7 @@
         private System.Windows.Forms.Button updateButton;
         private System.Windows.Forms.DataVisualization.Charting.Chart customChart;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.ComboBox customChartPicker;
         private System.Windows.Forms.DataVisualization.Charting.Chart liveChart;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem quitToolStripMenuItem;
@@ -598,20 +626,20 @@
         private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem liveChartToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem updateIntervalToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem secondsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem secondsToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem secondsToolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem secondsToolStripMenuItem3;
+        private System.Windows.Forms.ToolStripMenuItem tenSecondsItem;
+        private System.Windows.Forms.ToolStripMenuItem twentySecondsItem;
+        private System.Windows.Forms.ToolStripMenuItem thirtySecondsItem;
+        private System.Windows.Forms.ToolStripMenuItem sixtySecondsItem;
         private System.Windows.Forms.ToolStripMenuItem rangeToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem hourToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem hourToolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem hourToolStripMenuItem4;
-        private System.Windows.Forms.ToolStripMenuItem hourToolStripMenuItem2;
-        private System.Windows.Forms.ToolStripMenuItem hourToolStripMenuItem3;
+        private System.Windows.Forms.ToolStripMenuItem oneHourRange;
+        private System.Windows.Forms.ToolStripMenuItem twoHourRange;
+        private System.Windows.Forms.ToolStripMenuItem sixHourRange;
+        private System.Windows.Forms.ToolStripMenuItem twelveHourRange;
+        private System.Windows.Forms.ToolStripMenuItem twentyFourHourRange;
         private System.Windows.Forms.SplitContainer liveChartSplitContainer;
         private System.Windows.Forms.SplitContainer customChartSplitContainer;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckedListBox checkedListBox1;
+        private System.Windows.Forms.CheckBox liveChartAverage;
+        private System.Windows.Forms.CheckBox customChartAverage;
         private System.Windows.Forms.RichTextBox debugBox;
     }
 }
