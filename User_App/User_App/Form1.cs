@@ -16,22 +16,48 @@ using System.Threading;
 
 namespace User_App
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         [XmlArray("Chambers")]
         [XmlArrayItem("Chamber")]
         private Chamber[] chambers;
 
+        private ChamberForm chamberForm;
+        private SensorForm sensorForm;
+
         private int liveChartRange = 1;
         private System.Timers.Timer liveChartTimer;
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             liveChartTimer = new System.Timers.Timer
             {
                 Interval = 10000
             };
+            UpdateEnvironment();
+        }
+
+        private void UpdateEnvironment()
+        {
             DeserialiseProcessorOutput(CallProcessor("getEnv"), "getEnv");
+            liveChartPicker.DisplayMember = "Text";
+            liveChartPicker.ValueMember = "Value";
+            customChartPicker.DisplayMember = "Text";
+            customChartPicker.ValueMember = "Value";
+
+            List<Object> items = new List<Object>();
+            for (int i = 0; i < chambers.Length; i++)
+            {
+                items.Add(new { Text = chambers[i].Name, Value = chambers[i] });
+            }
+
+            liveChartPicker.DataSource = items;
+            customChartPicker.DataSource = items;
+        }
+        private void ChamberForm_Disposed(object sender, EventArgs e) //change from disposed to disposed after successful submit
+        {
+            Task update = new Task(() => UpdateEnvironment());
+            update.Start();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -55,6 +81,13 @@ namespace User_App
 
         private void updateButton_Click(object sender, EventArgs e)
         {
+            DataSet[] customChartData = null;
+            Chamber c = (Chamber)GetCustomChartPickerValue();
+            DateTime startDate = GetStartDatePickerValue();
+            DateTime endDate = GetEndDatePickerValue();
+            Boolean averageValues = GetCustomChartAverage();
+
+            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" " + averageValues.ToString().ToLower() + " false";
             Thread customChartThread = new Thread(new ThreadStart(UpdateCustomChart));
             customChartThread.Start();
         }
@@ -65,9 +98,9 @@ namespace User_App
             Chamber c = (Chamber)GetCustomChartPickerValue();
             DateTime startDate = GetStartDatePickerValue();
             DateTime endDate = GetEndDatePickerValue();
-            Boolean averageValues = true;
+            Boolean averageValues = GetCustomChartAverage();
 
-            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" " + averageValues + "  false";
+            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" " + averageValues + " false";
             customChartData = DeserialiseProcessorOutput(CallProcessor(args));
             if (customChartData != null)
             {
@@ -146,19 +179,7 @@ namespace User_App
                         }
                         break;
 
-                    case "addChamber":
-                        break;
-
-                    case "editChamber":
-                        break;
-
                     case "removeChamber":
-                        break;
-
-                    case "addSensor":
-                        break;
-
-                    case "editSensor":
                         break;
 
                     case "removeSensor":
@@ -208,7 +229,7 @@ namespace User_App
             DateTime startDate = endDate.AddHours(-liveChartRange);
             Boolean averageValues = GetLiveChartAverage();
 
-            String processorArgs = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd hh:mm:ss") + "\" " + averageValues + " false";
+            String processorArgs = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" " + averageValues + " false";
             liveChartData = DeserialiseProcessorOutput(CallProcessor(processorArgs));
             if (liveChartData != null || liveChartData.Length != 0)
             {
@@ -322,7 +343,7 @@ namespace User_App
                             this.liveChart.Series["Temperature Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
                             for (int j = 0; j < data[i].Data.Length; j++)
                             {
-                                this.liveChart.Series["Temperature Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp, data[i].Data[j].Reading);
+                                this.liveChart.Series["Temperature Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd HH:mm"), data[i].Data[j].Reading);
                             }
                             break;
 
@@ -334,7 +355,7 @@ namespace User_App
                             this.liveChart.Series["Pressure Sensor " + data[i].SensorID].YAxisType = AxisType.Secondary;
                             for (int j = 0; j < data[i].Data.Length; j++)
                             {
-                                this.liveChart.Series["Pressure Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp, data[i].Data[j].Reading);
+                                this.liveChart.Series["Pressure Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd HH:mm"), data[i].Data[j].Reading);
                             }
                             break;
 
@@ -345,7 +366,7 @@ namespace User_App
                             this.liveChart.Series["Humidity Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
                             for (int j = 0; j < data[i].Data.Length; j++)
                             {
-                                this.liveChart.Series["Humidity Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp, data[i].Data[j].Reading);
+                                this.liveChart.Series["Humidity Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd HH:mm"), data[i].Data[j].Reading);
                             }
                             break;
                     }
@@ -377,7 +398,7 @@ namespace User_App
                             this.customChart.Series["Temperature Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
                             for (int j = 0; j < data[i].Data.Length; j++)
                             {
-                                this.customChart.Series["Temperature Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd hh:mm"), data[i].Data[j].Reading);
+                                this.customChart.Series["Temperature Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd HH:mm"), data[i].Data[j].Reading);
                             }
                             break;
 
@@ -389,7 +410,7 @@ namespace User_App
                             this.customChart.Series["Pressure Sensor " + data[i].SensorID].YAxisType = AxisType.Secondary;
                             for (int j = 0; j < data[i].Data.Length; j++)
                             {
-                                this.customChart.Series["Pressure Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd hh:mm"), data[i].Data[j].Reading);
+                                this.customChart.Series["Pressure Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd HH:mm"), data[i].Data[j].Reading);
                             }
                             break;
 
@@ -400,7 +421,7 @@ namespace User_App
                             this.customChart.Series["Humidity Sensor " + data[i].SensorID].ChartType = SeriesChartType.Line;
                             for (int j = 0; j < data[i].Data.Length; j++)
                             {
-                                this.customChart.Series["Humidity Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd hh:mm"), data[i].Data[j].Reading);
+                                this.customChart.Series["Humidity Sensor " + data[i].SensorID].Points.AddXY(data[i].Data[j].Timestamp.ToString("yyyy-MM-dd HH:mm"), data[i].Data[j].Reading);
                             }
                             break;
                     }
@@ -487,7 +508,6 @@ namespace User_App
             saveFileDialog1.ShowDialog();
             if(saveFileDialog1.FileName != "")
             {
-                debugBox.Text = saveFileDialog1.FileName;
                 Thread saveChart = new Thread(() => SaveCustomChart(saveFileDialog1.FileName));
                 saveChart.Start();
             }
@@ -499,8 +519,27 @@ namespace User_App
             DateTime startDate = GetStartDatePickerValue();
             DateTime endDate = GetEndDatePickerValue();
             Boolean averageValues = GetCustomChartAverage();
-            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd hh:mm") + "\" \"" + endDate.ToString("yyyy-MM-dd hh:mm") + "\" " + averageValues + " true \"" + filename + "\"";
+            String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" " + averageValues + " true \"" + filename + "\"";
             CallProcessor(args);
+        }
+
+        private void newChamberMenuButton_Click(object sender, EventArgs e)
+        {
+            chamberForm = new ChamberForm(chambers, false);
+            chamberForm.Disposed += ChamberForm_Disposed;
+            chamberForm.BringToFront();
+            chamberForm.TopMost = true;
+            chamberForm.Focus();
+            chamberForm.Show();
+        }
+
+        private void createNewSensorButton_Click(object sender, EventArgs e)
+        {
+            sensorForm = new SensorForm(chambers, false);
+            sensorForm.BringToFront();
+            sensorForm.TopMost = true;
+            sensorForm.Focus();
+            sensorForm.Show();
         }
     }
 }

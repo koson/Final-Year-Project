@@ -698,6 +698,7 @@ namespace ProcessingApplication
             object misValue = System.Reflection.Missing.Value;
 
             xlApp = new Excel.Application();
+            xlApp.DisplayAlerts = false;
             xlApp.Visible = false;
             xlWorkBook = xlApp.Workbooks.Add(misValue);
             xlWorkSheet = xlWorkBook.Worksheets.get_Item(1);

@@ -141,7 +141,7 @@ namespace CollectorService
             {
                 double regValue = CalculateRegisterValue(rawData);
                 double sensorReading = GetSensorReading(regValue, sensor);
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
                 return toReturn;
             }

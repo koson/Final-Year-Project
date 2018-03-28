@@ -61,11 +61,12 @@ namespace Collector
         Tuple<double, double, String> ReadModbusSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
-            if(rawData != null)
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            Console.WriteLine(timestamp);
+            if (rawData != null)
             {
                 double regValue = CalculateRegisterValue(rawData);
                 double sensorReading = GetModbusSensorReading(regValue, sensor);
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd h:mm:ss");
                 Console.WriteLine(timestamp);
                 var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
                 return toReturn;
