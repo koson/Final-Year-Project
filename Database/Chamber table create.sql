@@ -1,0 +1,5 @@
+CREATE TABLE Chamber (
+	Chamber_ID int IDENTITY(1,1) PRIMARY KEY,
+	Name VARCHAR(45) NOT NULL,
+	Description VARCHAR(45) NOT NULL,
+	)
