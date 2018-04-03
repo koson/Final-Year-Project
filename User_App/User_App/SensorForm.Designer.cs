@@ -37,7 +37,7 @@
             this.createNewButton = new System.Windows.Forms.RadioButton();
             this.editExistingButton = new System.Windows.Forms.RadioButton();
             this.sensorNameBox = new System.Windows.Forms.TextBox();
-            this.addressBox = new System.Windows.Forms.TextBox();
+            this.sensorIPBox = new System.Windows.Forms.TextBox();
             this.portBox = new System.Windows.Forms.TextBox();
             this.scaleBox = new System.Windows.Forms.TextBox();
             this.offsetBox = new System.Windows.Forms.TextBox();
@@ -77,6 +77,7 @@
             this.typePicker.Size = new System.Drawing.Size(121, 21);
             this.typePicker.TabIndex = 2;
             this.typePicker.Text = "Sensor Type";
+            this.typePicker.SelectedValueChanged += new System.EventHandler(this.typePicker_SelectedValueChanged);
             // 
             // registerPicker
             // 
@@ -146,13 +147,13 @@
             this.sensorNameBox.TabIndex = 8;
             this.sensorNameBox.Text = "Name";
             // 
-            // addressBox
+            // sensorIPBox
             // 
-            this.addressBox.Location = new System.Drawing.Point(12, 225);
-            this.addressBox.Name = "addressBox";
-            this.addressBox.Size = new System.Drawing.Size(121, 20);
-            this.addressBox.TabIndex = 9;
-            this.addressBox.Text = "IP Address";
+            this.sensorIPBox.Location = new System.Drawing.Point(12, 225);
+            this.sensorIPBox.Name = "sensorIPBox";
+            this.sensorIPBox.Size = new System.Drawing.Size(121, 20);
+            this.sensorIPBox.TabIndex = 9;
+            this.sensorIPBox.Text = "IP Address";
             // 
             // portBox
             // 
@@ -237,7 +238,7 @@
             this.Controls.Add(this.offsetBox);
             this.Controls.Add(this.scaleBox);
             this.Controls.Add(this.portBox);
-            this.Controls.Add(this.addressBox);
+            this.Controls.Add(this.sensorIPBox);
             this.Controls.Add(this.sensorNameBox);
             this.Controls.Add(this.editExistingButton);
             this.Controls.Add(this.createNewButton);
@@ -266,7 +267,7 @@
         private System.Windows.Forms.RadioButton createNewButton;
         private System.Windows.Forms.RadioButton editExistingButton;
         private System.Windows.Forms.TextBox sensorNameBox;
-        private System.Windows.Forms.TextBox addressBox;
+        private System.Windows.Forms.TextBox sensorIPBox;
         private System.Windows.Forms.TextBox portBox;
         private System.Windows.Forms.TextBox scaleBox;
         private System.Windows.Forms.TextBox offsetBox;

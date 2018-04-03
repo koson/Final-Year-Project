@@ -7,6 +7,7 @@ using System.Data.SqlClient;
 using System.Configuration;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Linq;
 
 namespace Collector
 {
@@ -25,11 +26,13 @@ namespace Collector
             Program program = new Program();
             program.ReadGeneralConfig();
             program.sensors = program.ReadSensorConfig();
-            System.Timers.Timer pollTimer = new System.Timers.Timer();
-            pollTimer.Interval = program.sensorPollInterval;
-            pollTimer.Start();
-            pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(program.OnTimer);
-            Console.ReadLine();
+            /* System.Timers.Timer pollTimer = new System.Timers.Timer();
+             pollTimer.Interval = program.sensorPollInterval;
+             pollTimer.Start();
+             pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(program.OnTimer);
+             Console.ReadLine();*/
+            Task.Factory.StartNew(() => program.PollModbusSensor(program.sensors[0]));
+            Console.Read();
         }
 
         //repoll all sensors
@@ -62,12 +65,17 @@ namespace Collector
         {
             byte[] rawData = RequestData(sensor);
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            for(int i = 0; i < rawData.Length; i++)
+            {
+                Console.Write(rawData[i].ToString());
+            }
             Console.WriteLine(timestamp);
             if (rawData != null)
             {
                 double regValue = CalculateRegisterValue(rawData);
                 double sensorReading = GetModbusSensorReading(regValue, sensor);
                 Console.WriteLine(timestamp);
+                Console.WriteLine(regValue);
                 var toReturn = Tuple.Create(regValue, sensorReading, timestamp);
                 return toReturn;
             }
@@ -78,14 +86,15 @@ namespace Collector
             
         }
 
-        ushort CalculateRegisterValue(byte[] rawData)
+        double CalculateRegisterValue(byte[] rawData)
         { //calculates register value based off of bits in packet (uses little endian)
             ushort regValue;
             byte[] toAdd = new byte[2]; //always 2 bytes of data returned (modmux modules use 12 bits to send value)
             toAdd = new byte[2] { rawData[10], rawData[9] }; //always 9th and 10th bit for modmux devices
             regValue = BitConverter.ToUInt16(toAdd, 0); //concatenate bits to form 16 bit word
-            Console.WriteLine("Register value is: " + regValue.ToString()); //for test purposes
-            return regValue;
+            double converted = Convert.ToDouble(regValue);
+            Console.WriteLine("Register value is: " + converted.ToString()); //for test purposes
+            return converted;
         }
 
         //obsolete
@@ -152,7 +161,7 @@ namespace Collector
 
             try
             {
-                TcpClient client = new TcpClient(sensor.Address, sensor.Port); //add try-catch
+                TcpClient client = new TcpClient(sensor.Address, sensor.Port);
                 NetworkStream nwStream = client.GetStream();
                 byte[] request = new byte[] { upperTransIdentifier, transIdentifier, protocolIdentifier, protocolIdentifier,
         upperHeaderLength, lowerHeaderLength, unitIdentifier, functionCode, 0b0, register, 0b0, 0b1};
@@ -160,8 +169,10 @@ namespace Collector
                 received = new byte[client.ReceiveBufferSize];
                 int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
                 client.Close();
-                return received;
-            }catch(Exception e)
+                byte[] toReturn = received.Take(13).ToArray();
+                return toReturn;
+            }
+            catch(Exception e)
             {
                 Console.WriteLine(e.ToString());
                 return null;

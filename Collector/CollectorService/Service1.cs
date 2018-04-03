@@ -148,22 +148,23 @@ namespace CollectorService
             return null;
         }
 
-        ushort CalculateRegisterValue(byte[] rawData)
+        public double CalculateRegisterValue(byte[] rawData)
         { //calculates register value based off of bits in packet (uses little endian)
             ushort regValue;
             byte[] toAdd = new byte[2]; //always 2 bytes of data returned (modmux modules use 12 bits to send value)
             toAdd = new byte[2] { rawData[10], rawData[9] }; //always 9th and 10th bit for modmux devices
             regValue = BitConverter.ToUInt16(toAdd, 0); //concatenate bits to form 16 bit word
-            return regValue;
+            return Convert.ToDouble(regValue);
         }
 
-        double CalculateVoltage(ushort regValue)
+        //unused
+        /*double CalculateVoltage(ushort regValue)
         { //calculates voltage based off register value received
             double voltage = regValue / 409.5; //http://www.proconel.com/Industrial-Data-Acquisition-Products/MODBUS-TCP-I-O-Modules/PM8AI-V-ISO---8-Voltage-Input-Module-Fully-Isolate.aspx states that 819 = 2v
             return voltage;
-        }
+        }*/
 
-        double GetSensorReading(double regValue, Sensor sensor)
+        public double GetSensorReading(double regValue, Sensor sensor)
         {
             double reading = 0;
             switch (sensor.SensorType)
@@ -178,33 +179,32 @@ namespace CollectorService
                     reading = CalculateHumidity(regValue, sensor.Scale, sensor.Offset);
                     break;
                 default:
-                    //unknown - throw error
-                    break;
+                    throw new ArgumentOutOfRangeException("Sensor.SensorType");
             }
             return reading;
         }
 
-        double CalculateHumidity(double regValue, double scale, double offset)
+        public double CalculateHumidity(double regValue, double scale, double offset)
         {
             //(regValue * scale) + offset
             double humidity = (regValue*scale) + offset;
             return humidity;
         }
 
-        double CalculatePressure(double regValue, double scale, double offset)
+        public double CalculatePressure(double regValue, double scale, double offset)
         {
             //(regValue * scale) + offset
             double pressure = (regValue*scale) + offset;
             return pressure;
         }
 
-        double CalculateTemperature(double regValue)
+        public double CalculateTemperature(double regValue)
         {
             double temperature = regValue/10;
             return temperature;
         }
 
-        byte[] RequestData(Sensor sensor)
+        public byte[] RequestData(Sensor sensor)
         { //sends request to a modmux device. returns modmux response
             byte upperTransIdentifier = 0b0;
             byte transIdentifier = (byte)0;
@@ -224,7 +224,8 @@ namespace CollectorService
                 byte[] received = new byte[client.ReceiveBufferSize];
                 int bytesRead = nwStream.Read(received, 0, client.ReceiveBufferSize);
                 client.Close();
-                return received;
+                byte[] toReturn = received.Take(13).ToArray();
+                return toReturn;
             }
             catch (Exception e)
             {
@@ -237,7 +238,7 @@ namespace CollectorService
             return null;
         }
 
-        Sensor[] ReadSensorConfig()
+        public Sensor[] ReadSensorConfig()
         { //reads configuration from the sensors table in the DB
              List<Sensor> sensors = new List<Sensor>();
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
@@ -279,6 +280,7 @@ namespace CollectorService
             catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while reading sensor information from database. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
+                throw new System.NullReferenceException();
             }
             finally
             {
@@ -289,12 +291,12 @@ namespace CollectorService
             if(sensorArray.Length == 0)
             {
                 eventLog.WriteEntry("No sensors to poll. stopping", EventLogEntryType.Error, eventID++);
-                throw new System.NullReferenceException();
+                throw new NullReferenceException();
             }
             return sensorArray;
         }
 
-        void ReadGeneralConfig()
+        public void ReadGeneralConfig()
         {
             try
             {
@@ -308,7 +310,7 @@ namespace CollectorService
             catch (Exception e)
             {
                 eventLog.WriteEntry("An error occured while reading general configuration. Error message is: " + e.ToString(), EventLogEntryType.Error, eventID++);
-                throw new Exception();
+                throw new Exception(e.ToString());
             }
             finally
             {
@@ -317,7 +319,7 @@ namespace CollectorService
             eventLog.WriteEntry("successfully read general configuration", EventLogEntryType.Information, eventID++);
         }
 
-        void SendToDatabase(Sensor sensor, Tuple<double, double, String> result)
+        public void SendToDatabase(Sensor sensor, Tuple<double, double, String> result)
         {
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
                 + databaseUser + "; Password =" + databasePassword;
@@ -341,5 +343,26 @@ namespace CollectorService
                 GC.Collect();
             }
         }
+
+        public void SetValidGeneralConfigForTesting()
+        {
+            databaseHost = "169.254.121.230";
+            databaseName = "Sensorcom";
+            databaseUser = "sensorcom";
+            databasePassword = "password";
+            databaseTimeout = "10";
+            sensorPollInterval = 1000;
+        }
+
+        public void SetInvalidGeneralConfigForTesting()
+        {
+            databaseHost = "169.21.230";
+            databaseName = "Sensorcom";
+            databaseUser = "sensom";
+            databasePassword = "pasord";
+            databaseTimeout = "10";
+            sensorPollInterval = 1000;
+        }
+
     }
 }

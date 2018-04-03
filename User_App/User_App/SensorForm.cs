@@ -98,6 +98,13 @@ namespace User_App
             {
                 SetChamberPicker(GetChamberByID(s.ChamberID));
                 SetRegisterPicker(s.Register);
+                SetTypePicker(s.SensorType);
+                SetSensorNameBox(s.Description);
+                SetSensorIPBox(s.Address);
+                SetPortBox(s.Port.ToString());
+                SetScaleBox(s.Scale.ToString());
+                SetOffsetBox(s.Offset.ToString());
+                SetSensorEnabled(true);
             }
         }
 
@@ -126,6 +133,90 @@ namespace User_App
             else
             {
                 this.registerPicker.SelectedValue = register;
+            }
+        }
+
+        delegate void SetSensorNameBoxCallback(String name);
+        private void SetSensorNameBox(String name)
+        {
+            if (this.sensorNameBox.InvokeRequired)
+            {
+                SetSensorNameBoxCallback p = new SetSensorNameBoxCallback(SetSensorNameBox);
+                this.Invoke(p, new object[] { name });
+            }
+            else
+            {
+                this.sensorNameBox.Text = name;
+            }
+        }
+
+        delegate void SetSensorIPBoxCallback(String ip);
+        private void SetSensorIPBox(String ip)
+        {
+            if (this.sensorIPBox.InvokeRequired)
+            {
+                SetSensorIPBoxCallback p = new SetSensorIPBoxCallback(SetSensorIPBox);
+                this.Invoke(p, new object[] { ip });
+            }
+            else
+            {
+                this.sensorIPBox.Text = ip;
+            }
+        }
+
+        delegate void SetPortBoxCallback(String port);
+        private void SetPortBox(String port)
+        {
+            if (this.portBox.InvokeRequired)
+            {
+                SetPortBoxCallback p = new SetPortBoxCallback(SetPortBox);
+                this.Invoke(p, new object[] { port });
+            }
+            else
+            {
+                this.portBox.Text = port;
+            }
+        }
+
+        delegate void SetScaleBoxCallback(String scale);
+        private void SetScaleBox(String scale)
+        {
+            if (this.scaleBox.InvokeRequired)
+            {
+                SetScaleBoxCallback p = new SetScaleBoxCallback(SetScaleBox);
+                this.Invoke(p, new object[] { scale });
+            }
+            else
+            {
+                this.scaleBox.Text = scale;
+            }
+        }
+
+        delegate void SetOffsetBoxCallback(String offset);
+        private void SetOffsetBox(String offset)
+        {
+            if (this.offsetBox.InvokeRequired)
+            {
+                SetOffsetBoxCallback p = new SetOffsetBoxCallback(SetOffsetBox);
+                this.Invoke(p, new object[] { offset });
+            }
+            else
+            {
+                this.offsetBox.Text = offset;
+            }
+        }
+
+        delegate void SetSensorEnabledCallback(Boolean enabled);
+        private void SetSensorEnabled(Boolean enabled)
+        {
+            if (this.enabledBox.InvokeRequired)
+            {
+                SetSensorEnabledCallback p = new SetSensorEnabledCallback(SetSensorEnabled);
+                this.Invoke(p, new object[] { enabled });
+            }
+            else
+            {
+                this.enabledBox.Checked = enabled;
             }
         }
 
@@ -172,6 +263,20 @@ namespace User_App
         private void sensorPicker_SelectedValueChanged(object sender, EventArgs e)
         {
             UpdateFields((Sensor)sensorPicker.SelectedValue);
+        }
+
+        private void typePicker_SelectedValueChanged(object sender, EventArgs e)
+        {
+            if(typePicker.SelectedIndex == 0) //temperature
+            {
+                offsetBox.Enabled = false;
+                scaleBox.Enabled = false;
+            }
+            else
+            {
+                offsetBox.Enabled = true;
+                scaleBox.Enabled = true;
+            }
         }
     }
 }
