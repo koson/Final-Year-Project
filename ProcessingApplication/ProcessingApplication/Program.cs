@@ -11,7 +11,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 namespace ProcessingApplication
 {
-    class Program
+    public class Program
     {
         private string databaseHost;
         private string databaseName;
@@ -25,7 +25,7 @@ namespace ProcessingApplication
         bool debug;
         bool interactive;
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Program p = new Program();
             p.Initialise();
@@ -348,7 +348,7 @@ namespace ProcessingApplication
             }
         }
 
-        void Initialise()
+        public void Initialise()
         {
             ReadProgramConfig();
             interactive = false;
@@ -357,7 +357,7 @@ namespace ProcessingApplication
                 + databaseUser + "; Password =" + databasePassword;
         }
 
-        void PrintUsageText(string commandName) //prints help guide on command line
+        public void PrintUsageText(string commandName) //prints help guide on command line
         {
             switch (commandName)
             {
@@ -468,12 +468,12 @@ namespace ProcessingApplication
             
         }
 
-        void GetEnvironment() //get all chambers and sensors in database (no actual reportable data)
+        public void GetEnvironment() //get all chambers and sensors in database (no actual reportable data)
         {
             chambers = GetChamberList();
             LoadAllSensors();
         }
-        Sensor[] GetSensorsForChamber(Chamber chamber)
+        public Sensor[] GetSensorsForChamber(Chamber chamber)
         {
             //get list of all sensors for a chamber
             List<Sensor> sensors = new List<Sensor>();
@@ -534,7 +534,7 @@ namespace ProcessingApplication
                 chambers[i].sensors = GetSensorsForChamber(chambers[i]);
             }
         }
-        Chamber[] GetChamberList()
+        public Chamber[] GetChamberList()
         {
             //get list of all chambers
             List<Chamber> chambers = new List<Chamber>();
@@ -565,7 +565,7 @@ namespace ProcessingApplication
             return chambers.ToArray();
         }
 
-        DataSet GetDataForSensor(Sensor s, DateTime startTime, DateTime endTime)
+        public DataSet GetDataForSensor(Sensor s, DateTime startTime, DateTime endTime)
         {
             //get all data for a sensor in a timerange
             List<DataItem> returnedData = new List<DataItem>();
@@ -602,7 +602,7 @@ namespace ProcessingApplication
             return new DataSet(returnedData.ToArray(), s.ID);
         }
         
-        Chamber GetChamberByID(int chamberID)
+        public Chamber GetChamberByID(int chamberID)
         {
             Chamber c = null;
             for(int i = 0; i < chambers.Length; i++)
@@ -615,7 +615,7 @@ namespace ProcessingApplication
             return c;
         }
 
-        Sensor GetSensorByID(int sensorID)
+        public Sensor GetSensorByID(int sensorID)
         {
             Sensor s = null;
             for(int i = 0; i < chambers.Length; i++)
@@ -649,7 +649,7 @@ namespace ProcessingApplication
         }
 
         //change to allow custom time intervals to average (based off user input in GUI)?
-        DataSet ProduceMeanValues(DataSet dataToAverage) //mean of all values for certain sensor type per minute within the time range
+        public DataSet ProduceMeanValues(DataSet dataToAverage) //mean of all values for certain sensor type per minute within the time range
         {
             DataSet meanValues = new DataSet();
             DateTime earliestTime = dataToAverage.Data[0].Timestamp.AddSeconds(-(dataToAverage.Data[0].Timestamp.Second)); //earliest whole minute
@@ -708,7 +708,7 @@ namespace ProcessingApplication
 
             //add data
             xlWorkSheet.Cells[1, 1] = "Time";
-            DateTime[] dates = sortDates(chartData);
+            DateTime[] dates = SortDates(chartData);
             //add times
             for(int i = 0; i < dates.Length; i++)
             {
@@ -806,7 +806,7 @@ namespace ProcessingApplication
             GC.Collect();
         }
 
-        DateTime[] sortDates(DataSet[] chartData)
+        public DateTime[] SortDates(DataSet[] chartData)
         {
             List<DateTime> dates = new List<DateTime>();
             for(int i = 0; i < chartData.Length; i++)
@@ -823,7 +823,7 @@ namespace ProcessingApplication
             return dates.ToArray();
         }
 
-        void AddChamber(String name, String description)
+        public void AddChamber(String name, String description)
         {
             String query = "INSERT INTO Chamber (Name, Description) VALUES (@Name, @Description);";
             SqlParameter[] parameters = new SqlParameter[2];
@@ -858,7 +858,7 @@ namespace ProcessingApplication
             }
         }
 
-        void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, Boolean enabled) //add sensor to database
+        public void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, Boolean enabled) //add sensor to database
         {
             SqlConnection connection = new SqlConnection(connectionString);
             SqlParameter[] parameters = new SqlParameter[9];
@@ -921,7 +921,7 @@ namespace ProcessingApplication
             }
         }
 
-        void RemoveModbusSensor(int sensorID) //delete Modbus_Info data as well
+        public void RemoveModbusSensor(int sensorID) //delete Modbus_Info data as well
         {
             DeleteDataForSensor(sensorID);
             String getModbusInfoID = "SELECT Modbus_Info_ID FROM Sensor WHERE Sensor_ID = @ID;";
@@ -958,7 +958,7 @@ namespace ProcessingApplication
             }
         }
 
-        void RemoveChamber(int chamberID)
+        public void RemoveChamber(int chamberID)
         {
             Sensor[] sensorsToDelete = GetSensorsForChamber(GetChamberByID(chamberID));
             SqlConnection connection = new SqlConnection(connectionString);
@@ -968,11 +968,15 @@ namespace ProcessingApplication
             SqlCommand cmd = connection.CreateCommand();
             cmd.CommandText = query;
             cmd.Parameters.Add(id);
-            for(int i = 0; i < sensorsToDelete.Length; i++)
+            if(sensorsToDelete != null)
             {
-                Console.WriteLine("Removing sensor with ID" + sensorsToDelete[i].ID);
-                RemoveModbusSensor(sensorsToDelete[i].ID);
+                for (int i = 0; i < sensorsToDelete.Length; i++)
+                {
+                    Console.WriteLine("Removing sensor with ID" + sensorsToDelete[i].ID);
+                    RemoveModbusSensor(sensorsToDelete[i].ID);
+                }
             }
+            
             try
             {
                 connection.Open();
@@ -993,10 +997,10 @@ namespace ProcessingApplication
 
         }
 
-        void EditModbusSensor(int sensorID, String name, bool enabled, int type, int chamberID, String address, int port, int register, double scale, double offset)
+        public void EditModbusSensor(int sensorID, String name, bool enabled, int type, int chamberID, String address, int port, int register, double scale, double offset)
         {
             String getModbusInfoID = "SELECT Modbus_Info_ID FROM Sensor WHERE Sensor_ID = @SensorID;";
-            String updateSensor = "UPDATE Sensor SET Name = @Name, Sensor_Enabled = @Enabled, Sensor_Type = @Type, Chamber_ID = @Chamber, Modbus_Info_ID = @ModbusID WHERE Sensor_ID = @SensorID;";
+            String updateSensor = "UPDATE Sensor SET Name = @Name, Sensor_Enabled = @Enabled, Sensor_Type = @Type, Chamber_ID = @ChamberID, Modbus_Info_ID = @ModbusID WHERE Sensor_ID = @SensorID;";
             String updateModbusInfo = "UPDATE Modbus_Info SET IP_Address = @Address, Network_Port = @Port, Register = @Register, Scale = @Scale, Offset = @Offset WHERE Modbus_Info_ID = @ModbusID;";
             SqlConnection connection = new SqlConnection(connectionString);
             SqlCommand cmd = connection.CreateCommand();
@@ -1059,7 +1063,7 @@ namespace ProcessingApplication
             }
         }
 
-        void DeleteDataForSensor(int sensorID)
+        public void DeleteDataForSensor(int sensorID)
         {
             String dataRecordQuery = "DELETE FROM Data_Record where Sensor_ID = @ID;";
             String calibrationRecordQuery = "DELETE FROM Calibration_Record where Sensor_ID = @ID;";
@@ -1091,7 +1095,7 @@ namespace ProcessingApplication
             }
         }
 
-        void EditChamber(int chamberID, String name, String description)
+        public void EditChamber(int chamberID, String name, String description)
         {
             String query = "UPDATE Chamber SET Name = @Name, Description = @Description WHERE Chamber_ID = @ID;";
             SqlParameter[] parameters = new SqlParameter[3];
@@ -1127,7 +1131,7 @@ namespace ProcessingApplication
             }
         }
 
-        DataSet ConvertToFarenheit(DataSet temperatureValues)
+        public DataSet ConvertToFarenheit(DataSet temperatureValues)
         {
             for(int i = 0; i < temperatureValues.Data.Length; i++)
             {
@@ -1201,6 +1205,39 @@ namespace ProcessingApplication
             {
                 GC.Collect();
             }
+        }
+
+        public void SetConfigInUnitTests()
+        {
+            databaseHost = "169.254.121.230";
+            databaseName = "Sensorcom";
+            databaseUser = "sensorcom";
+            databasePassword = "password";
+            databaseTimeout = "10";
+            interactive = false;
+            debug = false;
+            connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
+                + databaseUser + "; Password =" + databasePassword;
+        }
+
+        public String GetConnectionString()
+        {
+            return connectionString;
+        }
+
+        public Boolean GetInteractive()
+        {
+            return interactive;
+        }
+
+        public Boolean GetDebug()
+        {
+            return debug;
+        }
+
+        public Chamber[] GetChambers()
+        {
+            return chambers;
         }
     }
 }
