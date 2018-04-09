@@ -177,7 +177,12 @@ namespace CollectorTest
             byte[] actual = s.RequestData(sen);
 
             //assert
-            CollectionAssert.AreEqual(expected, actual);
+            for(int i = 0; i < expected.Length; i++)
+            {
+                Console.WriteLine(actual[i]);
+                Assert.AreEqual(expected[i], actual[i]);
+            }
+            //CollectionAssert.AreEqual(expected, actual);
         }
 
         [TestMethod]
@@ -203,38 +208,5 @@ namespace CollectorTest
             //act
             Sensor[] actual = s.ReadSensorConfig();
         }
-
-        /*[TestMethod]
-        public void ReadGeneralConfig_Test()
-        {
-            //arrange
-            String expectedHost = "169.254.121.230";
-            String expectedName = "Sensorcom";
-            String expectedUser = "sensorcom";
-            String expectedPassword = "password";
-            String expectedTimeout = "10";
-            int expectedInterval = 1000;
-            Service1 s = new Service1(null);
-
-            //act
-            s.ReadGeneralConfig();
-
-            //assert
-            
-        }
-        */
-
-        [TestMethod]
-        [ExpectedException(typeof(Exception))]
-        public void ReadGeneralConfig_Fails_Test()
-        {
-            //arrange
-            Service1 s = new Service1(null);
-
-            //act
-            s.ReadGeneralConfig();
-        }
-
-
     }
 }

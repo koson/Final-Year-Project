@@ -30,27 +30,28 @@ namespace ProcessingApplication
             Program p = new Program();
             p.Initialise();
             p.GetEnvironment();
+            p.HandleArguments(args);
+            Console.Read();
+        }
+
+        public void HandleArguments(string[] args)
+        {
             int offset = 0;
 
-            if(args.Length > 1)
+            if (args.Length > 1)
             {
-                if(args[0] == "-i" || args[1] == "-i") //interactive mode
+                if (args[0] == "-v" ) //verbose mode
                 {
                     offset++;
-                    p.interactive = true;
-                }
-
-                if(args[0] == "-d" || args[1] == "-d") //debug mode
-                {
-                    p.debug = true;
-                    offset++;
+                    interactive = true;
+                    debug = true;
                 }
             }
-
-            switch (args[0+offset]) {
+            switch (args[0 + offset])
+            {
 
                 case "getEnv":
-                    Console.Write(p.BuildXML(p.chambers, true));
+                    Console.Write(BuildXML(chambers, true));
                     break;
 
                 case "produceGraph":
@@ -65,16 +66,16 @@ namespace ProcessingApplication
 
                     try
                     {
-                        chamberID = int.Parse(args[1+offset]);
-                        startDate = DateTime.Parse(args[2+offset]);
-                        endDate = DateTime.Parse(args[3+offset]);
-                        averageValues = Boolean.Parse(args[4+offset]);
-                        exportToExcel = Boolean.Parse(args[5+offset]);
+                        chamberID = int.Parse(args[1 + offset]);
+                        startDate = DateTime.Parse(args[2 + offset]);
+                        endDate = DateTime.Parse(args[3 + offset]);
+                        averageValues = Boolean.Parse(args[4 + offset]);
+                        exportToExcel = Boolean.Parse(args[5 + offset]);
                         if (exportToExcel)
                         {
-                            filename = args[6+offset];
+                            filename = args[6 + offset];
                         }
-                        if(startDate < endDate)
+                        if (startDate < endDate)
                         {
                             parseSuccessful = true;
                         }
@@ -83,37 +84,38 @@ namespace ProcessingApplication
                             throw new Exception();
                         }
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
 
-                    if(parseSuccessful)
+                    if (parseSuccessful)
                     {
-                        Chamber c = p.GetChamberByID(chamberID);
+                        Chamber c = GetChamberByID(chamberID);
                         if (c != null)
                         {
-                            DataSet[] graphData = p.ProduceGraphData(p.GetChamberByID(chamberID), startDate, endDate, averageValues);
+                            DataSet[] graphData = ProduceGraphData(GetChamberByID(chamberID), startDate, endDate, averageValues);
                             if (exportToExcel)
                             {
-                                p.ExportToExcel(graphData, filename, p.GetChamberByID(chamberID).Description);
-                                Console.Write(p.BuildXML(null, true));
+                                ExportToExcel(graphData, filename, GetChamberByID(chamberID).Description);
+                                Console.Write(BuildXML(null, true));
                             }
                             else
                             {
-                                Console.Write(p.BuildXML(graphData, true));
+                                Console.Write(BuildXML(graphData, true));
                             }
                         }
-                        else{
-                            p.BuildXML(null, false);
+                        else
+                        {
+                            BuildXML(null, false);
                         }
-                        
+
                     }
                     break;
 
@@ -124,24 +126,23 @@ namespace ProcessingApplication
 
                     try
                     {
-                        chamberDescription = args[1+offset];
-                        chamberName = args[2+offset];
+                        chamberDescription = args[1 + offset];
+                        chamberName = args[2 + offset];
                         parseSuccessful = true;
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
                     if (parseSuccessful)
                     {
-                        p.AddChamber(chamberName, chamberDescription);
-                        p.BuildXML(null, true);
+                        Console.Write(BuildXML(null, AddChamber(chamberName, chamberDescription)));
                     }
                     break;
 
@@ -153,25 +154,25 @@ namespace ProcessingApplication
 
                     try
                     {
-                        chamberID = int.Parse(args[1+offset]);
-                        chamberDescription = args[2+offset];
-                        chamberName = args[3+offset];
+                        chamberID = int.Parse(args[1 + offset]);
+                        chamberDescription = args[3 + offset];
+                        chamberName = args[2 + offset];
                         parseSuccessful = true;
-                    }catch(Exception e)
+                    }
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
 
                     if (parseSuccessful)
                     {
-                        p.EditChamber(chamberID, chamberName, chamberDescription);
-                        p.BuildXML(null, true);
+                        Console.Write(BuildXML(null, EditChamber(chamberID, chamberName, chamberDescription)));
                     }
                     break;
 
@@ -181,32 +182,40 @@ namespace ProcessingApplication
                     char confirm = ' ';
                     try
                     {
-                        chamberID = int.Parse(args[1+offset]);
+                        chamberID = int.Parse(args[1 + offset]);
                         parseSuccessful = true;
-                    }catch(Exception e)
+                    }
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
 
                     if (parseSuccessful)
                     {
-                        while(confirm != 'y' || confirm != 'n')
+                        if(interactive || debug)
                         {
-                            Console.WriteLine("Warning - this action will remove all associated sensors and the collected data for each sensor as well");
-                            Console.WriteLine("Are you sure you want to remove chamber " + chamberID + ": " + p.GetChamberByID(chamberID).Description + "?");
-                            confirm = (char)Console.Read();
+                            while (confirm != 'y' || confirm != 'n')
+                            {
+                                Console.WriteLine("Warning - this action will remove all associated sensors and the collected data for each sensor as well");
+                                Console.WriteLine("Are you sure you want to remove chamber " + chamberID + ": " + GetChamberByID(chamberID).Name + "?");
+                                confirm = Console.Read().ToString().ElementAt(0);
+                            }
+                            if (confirm == 'y')
+                            {
+                                Console.Write(BuildXML(null, RemoveChamber(chamberID)));
+                            }
                         }
-                        if(confirm == 'y')
+                        else
                         {
-                            p.RemoveChamber(chamberID);
-                            p.BuildXML(null, true);
+                            Console.Write(BuildXML(null, RemoveChamber(chamberID)));
                         }
+                        
                     }
                     break;
 
@@ -224,31 +233,31 @@ namespace ProcessingApplication
 
                     try
                     {
-                        sensorAddress = args[1+offset];
-                        sensorPort = int.Parse(args[2+offset]);
-                        sensorType = int.Parse(args[3+offset]);
-                        chamberID = int.Parse(args[4+offset]);
-                        sensorRegister = int.Parse(args[5+offset]);
-                        sensorScale = double.Parse(args[6+offset]);
-                        sensorOffset = double.Parse(args[7+offset]);
-                        sensorDescription = args[8+offset];
+                        sensorAddress = args[1 + offset];
+                        sensorPort = int.Parse(args[2 + offset]);
+                        sensorType = int.Parse(args[3 + offset]);
+                        chamberID = int.Parse(args[4 + offset]);
+                        sensorRegister = int.Parse(args[5 + offset]);
+                        sensorScale = double.Parse(args[6 + offset]);
+                        sensorOffset = double.Parse(args[7 + offset]);
+                        sensorDescription = args[8 + offset];
                         sensorEnabled = bool.Parse(args[9 + offset]);
                         parseSuccessful = true;
-                    }catch(Exception e)
+                    }
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
 
                     if (parseSuccessful)
                     {
-                        p.AddModbusSensor(sensorAddress, sensorPort, sensorType, chamberID, sensorRegister, sensorScale, sensorOffset, sensorDescription, sensorEnabled);
-                        p.BuildXML(null, true);
+                        Console.Write(BuildXML(null, AddModbusSensor(sensorAddress, sensorPort, sensorType, chamberID, sensorRegister, sensorScale, sensorOffset, sensorDescription, sensorEnabled)));
                     }
                     break;
 
@@ -267,32 +276,32 @@ namespace ProcessingApplication
 
                     try
                     {
-                        sensorID = int.Parse(args[1+offset]);
-                        sensorDescription = args[2+offset];
+                        sensorID = int.Parse(args[1 + offset]);
+                        sensorDescription = args[2 + offset];
                         sensorEnabled = bool.Parse(args[3 + offset]);
-                        sensorType = int.Parse(args[4+offset]);
-                        chamberID = int.Parse(args[5+offset]);
-                        sensorAddress = args[6+offset];
-                        sensorPort = int.Parse(args[7+offset]);
-                        sensorRegister = int.Parse(args[8+offset]);
-                        sensorScale = double.Parse(args[9+offset]);
-                        sensorOffset = double.Parse(args[10+offset]);
+                        sensorType = int.Parse(args[4 + offset]);
+                        chamberID = int.Parse(args[5 + offset]);
+                        sensorAddress = args[6 + offset];
+                        sensorPort = int.Parse(args[7 + offset]);
+                        sensorRegister = int.Parse(args[8 + offset]);
+                        sensorScale = double.Parse(args[9 + offset]);
+                        sensorOffset = double.Parse(args[10 + offset]);
                         parseSuccessful = true;
-                    }catch(Exception e)
+                    }
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
 
                     if (parseSuccessful)
                     {
-                        p.EditModbusSensor(sensorID, sensorDescription, sensorEnabled, sensorType, chamberID, sensorAddress, sensorPort, sensorRegister, sensorScale, sensorOffset);
-                        p.BuildXML(null, true);
+                        Console.Write(BuildXML(null, EditModbusSensor(sensorID, sensorDescription, sensorEnabled, sensorType, chamberID, sensorAddress, sensorPort, sensorRegister, sensorScale, sensorOffset)));
                     }
                     break;
 
@@ -302,48 +311,56 @@ namespace ProcessingApplication
                     parseSuccessful = false;
                     try
                     {
-                        sensorID = int.Parse(args[1+offset]);
+                        sensorID = int.Parse(args[1 + offset]);
                         parseSuccessful = true;
-                    }catch(Exception e)
+                    }
+                    catch (Exception e)
                     {
-                        if (p.interactive || p.debug)
+                        if (interactive || debug)
                         {
                             Console.WriteLine("Oops, there was a problem with your synax. The proper usage for " + args[0 + offset] + " is:");
                             Console.WriteLine("\n");
-                            p.PrintUsageText(args[0 + offset]);
+                            PrintUsageText(args[0 + offset]);
                         }
-                        Console.Write(p.BuildXML(e, false));
+                        Console.Write(BuildXML(e, false));
                     }
 
                     if (parseSuccessful)
                     {
-                        while(confirm != 'y' || confirm != 'n')
+                        if(interactive || debug)
                         {
-                            Console.WriteLine("Warning - this action will remove all collected data for the sensor as well");
-                            Console.WriteLine("Are you sure you want to permanently remove sensor " + sensorID + ": " + p.GetSensorByID(sensorID).Description + "?");
-                            confirm = (char)Console.Read();
+                            while (confirm != 'y' || confirm != 'n')
+                            {
+                                Console.WriteLine("Warning - this action will remove all collected data for the sensor as well");
+                                Console.WriteLine("Are you sure you want to permanently remove sensor " + sensorID + ": " + GetSensorByID(sensorID).Description + "?");
+                                confirm = Console.Read().ToString().ElementAt(0);
+                            }
+                            if (confirm == 'y')
+                            {
+                                Console.Write(BuildXML(null, RemoveModbusSensor(sensorID)));
+                            }
                         }
-                        if(confirm == 'y')
+                        else
                         {
-                            p.RemoveModbusSensor(sensorID);
-                            p.BuildXML(null, true);
+                            Console.Write(BuildXML(null, RemoveModbusSensor(sensorID)));
                         }
+                        
                     }
                     break;
 
                 case "help":
-                    if (args.Length == (2+offset))
+                    if (args.Length == (2 + offset))
                     {
-                        p.PrintUsageText(args[1+offset]);
+                        PrintUsageText(args[1 + offset]);
                     }
                     else
                     {
-                        p.PrintUsageText("");
+                        PrintUsageText("");
                     }
                     break;
 
                 default:
-                    p.PrintUsageText("");
+                    PrintUsageText("");
                     break;
             }
         }
@@ -362,7 +379,7 @@ namespace ProcessingApplication
             switch (commandName)
             {
                 case "general":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe [-i] [-d] [command] [options]");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe [-v] [command] [options]");
                     Console.WriteLine("\n");
                     Console.WriteLine("Commands:");
                     Console.WriteLine(" - getEnv: Retrieve all chambers and sensors from database");
@@ -390,11 +407,11 @@ namespace ProcessingApplication
                     break;
 
                 case "addChamber":
-                    Console.WriteLine("USAGE: ProcessingApplication.exe addChamber description name");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe addChamber name description");
                     Console.WriteLine("\n");
                     Console.WriteLine("Parameters:");
-                    Console.WriteLine(" - description: The description for the new chamber");
                     Console.WriteLine(" - name: The name of the new chamber");
+                    Console.WriteLine(" - description: The description for the new chamber");
                     break;
 
                 case "editChamber":
@@ -452,7 +469,7 @@ namespace ProcessingApplication
                     Console.WriteLine(" - ID: The ID of the sensor to remove");
                     break;
                 default:
-                    Console.WriteLine("USAGE: ProcessingApplication.exe [-d] [-i] [command] [options]");
+                    Console.WriteLine("USAGE: ProcessingApplication.exe [-v] [command] [options]");
                     Console.WriteLine("\n");
                     Console.WriteLine("Commands:");
                     Console.WriteLine(" - getEnv: Retrieve all chambers and sensors from database");
@@ -823,7 +840,7 @@ namespace ProcessingApplication
             return dates.ToArray();
         }
 
-        public void AddChamber(String name, String description)
+        public Boolean AddChamber(String name, String description)
         {
             String query = "INSERT INTO Chamber (Name, Description) VALUES (@Name, @Description);";
             SqlParameter[] parameters = new SqlParameter[2];
@@ -844,69 +861,7 @@ namespace ProcessingApplication
                 cmd.ExecuteNonQuery();
                 cmd.Dispose();
                 connection.Close();
-            }
-            catch (Exception e)
-            {
-                if (debug)
-                {
-                    Console.WriteLine(e.ToString());
-                }   
-            }
-            finally
-            {
-                GC.Collect();
-            }
-        }
-
-        public void AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, Boolean enabled) //add sensor to database
-        {
-            SqlConnection connection = new SqlConnection(connectionString);
-            SqlParameter[] parameters = new SqlParameter[9];
-            parameters[0] = new SqlParameter("@IP", System.Data.SqlDbType.VarChar);
-            parameters[0].Value = address;
-            parameters[1] = new SqlParameter("@Port", System.Data.SqlDbType.Int);
-            parameters[1].Value = port;
-            parameters[2] = new SqlParameter("@Type", System.Data.SqlDbType.Int);
-            parameters[2].Value = type;
-            parameters[3] = new SqlParameter("@ChamberID", System.Data.SqlDbType.Int);
-            parameters[3].Value = chamberID;
-            parameters[4] = new SqlParameter("@Register", System.Data.SqlDbType.Int);
-            parameters[4].Value = register;
-            parameters[5] = new SqlParameter("@Scale", System.Data.SqlDbType.Float);
-            parameters[5].Value = scale;
-            parameters[6] = new SqlParameter("@Offset", System.Data.SqlDbType.Float);
-            parameters[6].Value = offset;
-            parameters[7] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
-            parameters[7].Value = description;
-            parameters[8] = new SqlParameter("@Enabled", System.Data.SqlDbType.Bit);
-            if (enabled)
-            {
-                parameters[8].Value = 1;
-            }
-            else
-            {
-                parameters[8].Value = 0;
-            }
-            
-            String query = "INSERT INTO Modbus_Info (IP_Address, Network_Port, Register, Scale, Offset) VALUES (@IP, @Port, @Register, @Scale, @Offset);";
-            SqlCommand command = connection.CreateCommand();
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                command.Parameters.Add(parameters[i]);
-            }
-            try
-            {
-                connection.Open();               
-                command.CommandText = query;
-                command.ExecuteNonQuery();
-                query = "SELECT TOP 1 Modbus_Info_ID FROM Modbus_Info ORDER BY Modbus_Info_ID DESC;"; //get last inserted modbus info record - the one that was just made
-                command.CommandText = query;
-                int modbusID = (int)command.ExecuteScalar();              
-                query = "INSERT INTO Sensor (Name, Sensor_Enabled, Sensor_Type, Chamber_ID, Modbus_Info_ID) VALUES (@Description, @Enabled,  @Type, @ChamberID, " + modbusID.ToString() + ");";
-                command.CommandText = query;
-                command.ExecuteNonQuery();
-                command.Dispose();
-                connection.Close();
+                return true;
             }
             catch (Exception e)
             {
@@ -914,6 +869,7 @@ namespace ProcessingApplication
                 {
                     Console.WriteLine(e.ToString());
                 }
+                return false;
             }
             finally
             {
@@ -921,7 +877,79 @@ namespace ProcessingApplication
             }
         }
 
-        public void RemoveModbusSensor(int sensorID) //delete Modbus_Info data as well
+        public Boolean AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, Boolean enabled) //add sensor to database
+        {
+            if(GetChamberByID(chamberID) != null)
+            {
+                SqlConnection connection = new SqlConnection(connectionString);
+                SqlParameter[] parameters = new SqlParameter[9];
+                parameters[0] = new SqlParameter("@IP", System.Data.SqlDbType.VarChar);
+                parameters[0].Value = address;
+                parameters[1] = new SqlParameter("@Port", System.Data.SqlDbType.Int);
+                parameters[1].Value = port;
+                parameters[2] = new SqlParameter("@Type", System.Data.SqlDbType.Int);
+                parameters[2].Value = type;
+                parameters[3] = new SqlParameter("@ChamberID", System.Data.SqlDbType.Int);
+                parameters[3].Value = chamberID;
+                parameters[4] = new SqlParameter("@Register", System.Data.SqlDbType.Int);
+                parameters[4].Value = register;
+                parameters[5] = new SqlParameter("@Scale", System.Data.SqlDbType.Float);
+                parameters[5].Value = scale;
+                parameters[6] = new SqlParameter("@Offset", System.Data.SqlDbType.Float);
+                parameters[6].Value = offset;
+                parameters[7] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
+                parameters[7].Value = description;
+                parameters[8] = new SqlParameter("@Enabled", System.Data.SqlDbType.Bit);
+                if (enabled)
+                {
+                    parameters[8].Value = 1;
+                }
+                else
+                {
+                    parameters[8].Value = 0;
+                }
+
+                String query = "INSERT INTO Modbus_Info (IP_Address, Network_Port, Register, Scale, Offset) VALUES (@IP, @Port, @Register, @Scale, @Offset);";
+                SqlCommand command = connection.CreateCommand();
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    command.Parameters.Add(parameters[i]);
+                }
+                try
+                {
+                    connection.Open();
+                    command.CommandText = query;
+                    command.ExecuteNonQuery();
+                    query = "SELECT TOP 1 Modbus_Info_ID FROM Modbus_Info ORDER BY Modbus_Info_ID DESC;"; //get last inserted modbus info record - the one that was just made
+                    command.CommandText = query;
+                    int modbusID = (int)command.ExecuteScalar();
+                    query = "INSERT INTO Sensor (Name, Sensor_Enabled, Sensor_Type, Chamber_ID, Modbus_Info_ID) VALUES (@Description, @Enabled,  @Type, @ChamberID, " + modbusID.ToString() + ");";
+                    command.CommandText = query;
+                    command.ExecuteNonQuery();
+                    command.Dispose();
+                    connection.Close();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    if (debug)
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+                    return false;
+                }
+                finally
+                {
+                    GC.Collect();
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public Boolean RemoveModbusSensor(int sensorID) //delete Modbus_Info data as well
         {
             DeleteDataForSensor(sensorID);
             String getModbusInfoID = "SELECT Modbus_Info_ID FROM Sensor WHERE Sensor_ID = @ID;";
@@ -945,12 +973,14 @@ namespace ProcessingApplication
                 cmd.ExecuteNonQuery();
                 cmd.Dispose();
                 connection.Close();
+                return true;
             }catch(Exception e)
             {
                 if (debug)
                 {
                     Console.WriteLine(e.ToString());
                 }
+                return false;
             }
             finally
             {
@@ -958,112 +988,130 @@ namespace ProcessingApplication
             }
         }
 
-        public void RemoveChamber(int chamberID)
+        public Boolean RemoveChamber(int chamberID)
         {
-            Sensor[] sensorsToDelete = GetSensorsForChamber(GetChamberByID(chamberID));
-            SqlConnection connection = new SqlConnection(connectionString);
-            String query = "DELETE FROM Chamber WHERE Chamber_ID = @ID";
-            SqlParameter id = new SqlParameter("@ID", System.Data.SqlDbType.Int);
-            id.Value = chamberID;
-            SqlCommand cmd = connection.CreateCommand();
-            cmd.CommandText = query;
-            cmd.Parameters.Add(id);
-            if(sensorsToDelete != null)
+            if(GetChamberByID(chamberID) != null)
             {
-                for (int i = 0; i < sensorsToDelete.Length; i++)
+                Sensor[] sensorsToDelete = GetSensorsForChamber(GetChamberByID(chamberID));
+                SqlConnection connection = new SqlConnection(connectionString);
+                String query = "DELETE FROM Chamber WHERE Chamber_ID = @ID";
+                SqlParameter id = new SqlParameter("@ID", System.Data.SqlDbType.Int);
+                id.Value = chamberID;
+                SqlCommand cmd = connection.CreateCommand();
+                cmd.CommandText = query;
+                cmd.Parameters.Add(id);
+                if (sensorsToDelete != null)
                 {
-                    Console.WriteLine("Removing sensor with ID" + sensorsToDelete[i].ID);
-                    RemoveModbusSensor(sensorsToDelete[i].ID);
+                    for (int i = 0; i < sensorsToDelete.Length; i++)
+                    {
+                        Console.WriteLine("Removing sensor with ID" + sensorsToDelete[i].ID);
+                        RemoveModbusSensor(sensorsToDelete[i].ID);
+                    }
                 }
-            }
-            
-            try
-            {
-                connection.Open();
-                cmd.ExecuteNonQuery();
-                cmd.Dispose();
-                connection.Close();
-            }catch(Exception e)
-            {
-                if (debug)
+
+                try
                 {
-                    Console.WriteLine(e.ToString());
+                    connection.Open();
+                    cmd.ExecuteNonQuery();
+                    cmd.Dispose();
+                    connection.Close();
+                    return true;
                 }
-            }
-            finally
-            {
-                GC.Collect();
-            }
-
-        }
-
-        public void EditModbusSensor(int sensorID, String name, bool enabled, int type, int chamberID, String address, int port, int register, double scale, double offset)
-        {
-            String getModbusInfoID = "SELECT Modbus_Info_ID FROM Sensor WHERE Sensor_ID = @SensorID;";
-            String updateSensor = "UPDATE Sensor SET Name = @Name, Sensor_Enabled = @Enabled, Sensor_Type = @Type, Chamber_ID = @ChamberID, Modbus_Info_ID = @ModbusID WHERE Sensor_ID = @SensorID;";
-            String updateModbusInfo = "UPDATE Modbus_Info SET IP_Address = @Address, Network_Port = @Port, Register = @Register, Scale = @Scale, Offset = @Offset WHERE Modbus_Info_ID = @ModbusID;";
-            SqlConnection connection = new SqlConnection(connectionString);
-            SqlCommand cmd = connection.CreateCommand();
-            SqlParameter[] parameters = new SqlParameter[11];
-            parameters[0] = new SqlParameter("@SensorID", System.Data.SqlDbType.Int);
-            parameters[0].Value = sensorID;
-            parameters[1] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
-            parameters[1].Value = name;
-            parameters[2] = new SqlParameter("@Enabled", System.Data.SqlDbType.Bit);
-            if (enabled)
-            {
-                parameters[2].Value = 1;
+                catch (Exception e)
+                {
+                    if (debug)
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+                    return false;
+                }
+                finally
+                {
+                    GC.Collect();
+                }
             }
             else
             {
-                parameters[2].Value = 0;
-            }
-            parameters[3] = new SqlParameter("@Type", System.Data.SqlDbType.Int);
-            parameters[3].Value = type;
-            parameters[4] = new SqlParameter("@ChamberID", System.Data.SqlDbType.Int);
-            parameters[4].Value = chamberID;
-            parameters[5] = new SqlParameter("@Address", System.Data.SqlDbType.VarChar);
-            parameters[5].Value = address;
-            parameters[6] = new SqlParameter("@Port", System.Data.SqlDbType.Int);
-            parameters[6].Value = port;
-            parameters[7] = new SqlParameter("@Register", System.Data.SqlDbType.Int);
-            parameters[7].Value = register;
-            parameters[8] = new SqlParameter("@Scale", System.Data.SqlDbType.Float);
-            parameters[8].Value = scale;
-            parameters[9] = new SqlParameter("@Offset", System.Data.SqlDbType.Float);
-            parameters[9].Value = offset;
-            parameters[10] = new SqlParameter("@ModbusID", System.Data.SqlDbType.Int);
-            for (int i = 0; i < parameters.Length-1; i++)
-            {
-                cmd.Parameters.Add(parameters[i]);
-            }
-            cmd.CommandText = getModbusInfoID;
-            try
-            {
-                connection.Open();
-                parameters[10].Value = cmd.ExecuteScalar();
-                cmd.Parameters.Add(parameters[10]);
-                cmd.CommandText = updateSensor;
-                cmd.ExecuteNonQuery();
-                cmd.CommandText = updateModbusInfo;
-                cmd.ExecuteNonQuery();
-                cmd.Dispose();
-                connection.Close();
-            }
-            catch (Exception e)
-            {
-                if (debug)
-                {
-                    Console.WriteLine(e.ToString());
-                }
-            }
-            finally
-            {
-                GC.Collect();
+                return false;
             }
         }
 
-        public void DeleteDataForSensor(int sensorID)
+        public Boolean EditModbusSensor(int sensorID, String name, bool enabled, int type, int chamberID, String address, int port, int register, double scale, double offset)
+        {
+            if(GetSensorByID(sensorID) != null)
+            {
+                String getModbusInfoID = "SELECT Modbus_Info_ID FROM Sensor WHERE Sensor_ID = @SensorID;";
+                String updateSensor = "UPDATE Sensor SET Name = @Name, Sensor_Enabled = @Enabled, Sensor_Type = @Type, Chamber_ID = @ChamberID, Modbus_Info_ID = @ModbusID WHERE Sensor_ID = @SensorID;";
+                String updateModbusInfo = "UPDATE Modbus_Info SET IP_Address = @Address, Network_Port = @Port, Register = @Register, Scale = @Scale, Offset = @Offset WHERE Modbus_Info_ID = @ModbusID;";
+                SqlConnection connection = new SqlConnection(connectionString);
+                SqlCommand cmd = connection.CreateCommand();
+                SqlParameter[] parameters = new SqlParameter[11];
+                parameters[0] = new SqlParameter("@SensorID", System.Data.SqlDbType.Int);
+                parameters[0].Value = sensorID;
+                parameters[1] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
+                parameters[1].Value = name;
+                parameters[2] = new SqlParameter("@Enabled", System.Data.SqlDbType.Bit);
+                if (enabled)
+                {
+                    parameters[2].Value = 1;
+                }
+                else
+                {
+                    parameters[2].Value = 0;
+                }
+                parameters[3] = new SqlParameter("@Type", System.Data.SqlDbType.Int);
+                parameters[3].Value = type;
+                parameters[4] = new SqlParameter("@ChamberID", System.Data.SqlDbType.Int);
+                parameters[4].Value = chamberID;
+                parameters[5] = new SqlParameter("@Address", System.Data.SqlDbType.VarChar);
+                parameters[5].Value = address;
+                parameters[6] = new SqlParameter("@Port", System.Data.SqlDbType.Int);
+                parameters[6].Value = port;
+                parameters[7] = new SqlParameter("@Register", System.Data.SqlDbType.Int);
+                parameters[7].Value = register;
+                parameters[8] = new SqlParameter("@Scale", System.Data.SqlDbType.Float);
+                parameters[8].Value = scale;
+                parameters[9] = new SqlParameter("@Offset", System.Data.SqlDbType.Float);
+                parameters[9].Value = offset;
+                parameters[10] = new SqlParameter("@ModbusID", System.Data.SqlDbType.Int);
+                for (int i = 0; i < parameters.Length - 1; i++)
+                {
+                    cmd.Parameters.Add(parameters[i]);
+                }
+                cmd.CommandText = getModbusInfoID;
+                try
+                {
+                    connection.Open();
+                    parameters[10].Value = cmd.ExecuteScalar();
+                    cmd.Parameters.Add(parameters[10]);
+                    cmd.CommandText = updateSensor;
+                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = updateModbusInfo;
+                    cmd.ExecuteNonQuery();
+                    cmd.Dispose();
+                    connection.Close();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    if (debug)
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+                    return false;
+                }
+                finally
+                {
+                    GC.Collect();
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public Boolean DeleteDataForSensor(int sensorID)
         {
             String dataRecordQuery = "DELETE FROM Data_Record where Sensor_ID = @ID;";
             String calibrationRecordQuery = "DELETE FROM Calibration_Record where Sensor_ID = @ID;";
@@ -1081,6 +1129,7 @@ namespace ProcessingApplication
                 cmd.ExecuteNonQuery(); //Calibration_Record delete
                 cmd.Dispose();
                 connection.Close();
+                return true;
             }
             catch (Exception e)
             {
@@ -1088,6 +1137,7 @@ namespace ProcessingApplication
                 {
                     Console.WriteLine(e.ToString());
                 }
+                return false;
             }
             finally
             {
@@ -1095,40 +1145,51 @@ namespace ProcessingApplication
             }
         }
 
-        public void EditChamber(int chamberID, String name, String description)
+        public Boolean EditChamber(int chamberID, String name, String description)
         {
-            String query = "UPDATE Chamber SET Name = @Name, Description = @Description WHERE Chamber_ID = @ID;";
-            SqlParameter[] parameters = new SqlParameter[3];
-            parameters[0] = new SqlParameter("@ID", System.Data.SqlDbType.Int);
-            parameters[0].Value = chamberID;
-            parameters[1] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
-            parameters[1].Value = name;
-            parameters[2] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
-            parameters[2].Value = description;
-            SqlConnection connection = new SqlConnection(connectionString);
-            SqlCommand cmd = connection.CreateCommand();
-            cmd.CommandText = query;
-            for (int i = 0; i < parameters.Length; i++)
+            if(GetChamberByID(chamberID) != null)
             {
-                cmd.Parameters.Add(parameters[i]);
-            }
-            try
-            {
-                connection.Open();
-                cmd.ExecuteNonQuery();
-                cmd.Dispose();
-                connection.Close();
-            }catch(Exception e)
-            {
-                if (debug)
+                String query = "UPDATE Chamber SET Name = @Name, Description = @Description WHERE Chamber_ID = @ID;";
+                SqlParameter[] parameters = new SqlParameter[3];
+                parameters[0] = new SqlParameter("@ID", System.Data.SqlDbType.Int);
+                parameters[0].Value = chamberID;
+                parameters[1] = new SqlParameter("@Name", System.Data.SqlDbType.VarChar);
+                parameters[1].Value = name;
+                parameters[2] = new SqlParameter("@Description", System.Data.SqlDbType.VarChar);
+                parameters[2].Value = description;
+                SqlConnection connection = new SqlConnection(connectionString);
+                SqlCommand cmd = connection.CreateCommand();
+                cmd.CommandText = query;
+                for (int i = 0; i < parameters.Length; i++)
                 {
-                    Console.WriteLine(e.ToString());
+                    cmd.Parameters.Add(parameters[i]);
+                }
+                try
+                {
+                    connection.Open();
+                    cmd.ExecuteNonQuery();
+                    cmd.Dispose();
+                    connection.Close();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    if (debug)
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+                    return false;
+                }
+                finally
+                {
+                    GC.Collect();
                 }
             }
-            finally
+            else
             {
-                GC.Collect();
+                return false;
             }
+            
         }
 
         public DataSet ConvertToFarenheit(DataSet temperatureValues)
