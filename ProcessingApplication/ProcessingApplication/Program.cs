@@ -31,7 +31,6 @@ namespace ProcessingApplication
             p.Initialise();
             p.GetEnvironment();
             p.HandleArguments(args);
-            Console.Read();
         }
 
         public void HandleArguments(string[] args)
@@ -705,7 +704,7 @@ namespace ProcessingApplication
             return meanValues;
         }
 
-        void ExportToExcel(DataSet[] chartData, String filename, String chamberName)  //experimental version to test using 3 different series of time
+        public void ExportToExcel(DataSet[] chartData, String filename, String chamberName)  //experimental version to test using 3 different series of time
         {
             //create workbook
             Excel.Application xlApp;
@@ -771,7 +770,7 @@ namespace ProcessingApplication
             }
 
             Excel.Range allDataRange = xlWorkSheet.UsedRange;
-            allDataRange.Sort(allDataRange.Columns[1], Excel.XlSortOrder.xlAscending, misValue, misValue, Excel.XlSortOrder.xlAscending, misValue, Excel.XlSortOrder.xlAscending, Excel.XlYesNoGuess.xlYes); //sort by time, excluding first row (header)
+           // allDataRange.Sort(allDataRange.Columns[1], Excel.XlSortOrder.xlAscending, misValue, misValue, Excel.XlSortOrder.xlAscending, misValue, Excel.XlSortOrder.xlAscending, Excel.XlYesNoGuess.xlYes); //sort by time, excluding first row (header)
 
             Excel.ChartObjects xlCharts = xlWorkSheet2.ChartObjects(Type.Missing);
             Excel.ChartObject myChart = xlCharts.Add(0, 0, 900, 500);
@@ -784,11 +783,17 @@ namespace ProcessingApplication
             xAxis.CategoryType = Excel.XlCategoryType.xlCategoryScale;
             xAxis.HasTitle = true;
             xAxis.AxisTitle.Text = "Time";
+            xAxis.TickLabelPosition = Excel.XlTickLabelPosition.xlTickLabelPositionLow;
+            xAxis.TickLabelSpacing = (int)(dates.Length / 15.11);
+            xAxis.TickMarkSpacing = (int)(dates.Length / 15.11);
+            xAxis.HasMajorGridlines = true;
 
             Excel.Axis yAxis1 = (Excel.Axis)chartPage.Axes(Excel.XlAxisType.xlValue, Excel.XlAxisGroup.xlPrimary);
             yAxis1.HasTitle = true;
             yAxis1.AxisTitle.Text = "Temperature (°C) & Humidity (%)";
             yAxis1.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
+            yAxis1.MaximumScale = 100;
+            yAxis1.MinimumScale = -40;
 
             Boolean pressureData = false;
             //make all pressure data bound to secondary axis
@@ -797,7 +802,7 @@ namespace ProcessingApplication
                 String cellValue = (string)(xlWorkSheet.Cells[1, (i + 2)] as Excel.Range).Value;
                 if (cellValue == ("Pressure Sensor " + chartData[i].SensorID))
                 {
-                    chartPage.SeriesCollection((i + 1)).AxisGroup = Excel.XlAxisGroup.xlSecondary;
+                    chartPage.SeriesCollection(("Pressure Sensor " + chartData[i].SensorID)).AxisGroup = Excel.XlAxisGroup.xlSecondary;
                     if (debug)
                     {
                         Console.WriteLine("Pressure Data");
@@ -812,6 +817,8 @@ namespace ProcessingApplication
                 yAxis2.HasTitle = true;
                 yAxis2.AxisTitle.Text = "Pressure (mbar) (a)";
                 yAxis2.AxisTitle.Orientation = Excel.XlOrientation.xlUpward;
+                yAxis2.MinimumScale = 0;
+                yAxis2.MaximumScale = 1000;
             }
 
             xlWorkBook.SaveAs(filename, Excel.XlFileFormat.xlOpenXMLWorkbookMacroEnabled, misValue, misValue, misValue, misValue, Excel.XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
