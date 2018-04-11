@@ -1,16 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using System.IO;
 using System.Diagnostics;
-using System.Timers;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Threading;
 
@@ -24,6 +18,7 @@ namespace User_App
 
         private ChamberForm chamberForm;
         private SensorForm sensorForm;
+        private DeleteForm deleteForm;
 
         private int liveChartRange = 1;
         private System.Timers.Timer liveChartTimer;
@@ -54,7 +49,7 @@ namespace User_App
             liveChartPicker.DataSource = items;
             customChartPicker.DataSource = items;
         }
-        private void ChamberForm_Disposed(object sender, EventArgs e) //change from disposed to disposed after successful submit
+        private void ChildForm_Disposed(object sender, EventArgs e) //change from disposed to disposed after successful submit
         {
             Task update = new Task(() => UpdateEnvironment());
             update.Start();
@@ -117,7 +112,7 @@ namespace User_App
         {
             ProcessStartInfo start = new ProcessStartInfo
             {
-                FileName = @"C:\Users\Raife\source\repos\Final-Year-Project\ProcessingApplication\ProcessingApplication\bin\Debug\ProcessingApplication.exe",
+                FileName = @"..\..\Resources\ProcessingApplication.exe",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
@@ -133,6 +128,18 @@ namespace User_App
                 }
             }
             return result;
+        }
+
+        private Boolean DeserialiseProcessorOutput(String input, Boolean requireConfirmation)
+        {
+            if (input.Contains("<Success value=\"True\" />"))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private DataSet[] DeserialiseProcessorOutput(string input)
@@ -163,27 +170,16 @@ namespace User_App
             if(input.Contains("<Success value=\"True\" />"))
             {
                 input = input.Replace("<Success value=\"True\" />", null); //remove so we can deserialise XML string into object
-                switch (originalCommand)
+                try
                 {
-                    case "getEnv":
-                        try
-                        {
-                            XmlSerializer serializer = new XmlSerializer(typeof(Chamber[]));
-                            System.IO.StringReader reader = new System.IO.StringReader(input);
-                            chambers = (Chamber[])serializer.Deserialize(reader);
+                    XmlSerializer serializer = new XmlSerializer(typeof(Chamber[]));
+                    System.IO.StringReader reader = new System.IO.StringReader(input);
+                    chambers = (Chamber[])serializer.Deserialize(reader);
 
-                        }
-                        catch (Exception e)
-                        {
-
-                        }
-                        break;
-
-                    case "removeChamber":
-                        break;
-
-                    case "removeSensor":
-                        break;
+                }
+                catch (Exception e)
+                {
+                    //show error box
                 }
             }
             else
@@ -520,13 +516,25 @@ namespace User_App
             DateTime endDate = GetEndDatePickerValue();
             Boolean averageValues = GetCustomChartAverage();
             String args = "produceGraph " + c.ID + " \"" + startDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" \"" + endDate.ToString("yyyy-MM-dd HH:mm:ss") + "\" " + averageValues + " true \"" + filename + "\"";
-            CallProcessor(args);
+            if(DeserialiseProcessorOutput(CallProcessor(args), true)){
+                String message = "Chart saved to " + filename;
+                String caption = "Info";
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                MessageBox.Show(message, caption, buttons);
+            }
+            else
+            {
+                String message = "Error saving chart to " + filename;
+                String caption = "Error";
+                MessageBoxButtons buttons = MessageBoxButtons.OK;
+                MessageBox.Show(message, caption, buttons);
+            }
         }
 
         private void newChamberMenuButton_Click(object sender, EventArgs e)
         {
             chamberForm = new ChamberForm(chambers, false);
-            chamberForm.Disposed += ChamberForm_Disposed;
+            chamberForm.Disposed += ChildForm_Disposed;
             chamberForm.BringToFront();
             chamberForm.TopMost = true;
             chamberForm.Focus();
@@ -536,10 +544,62 @@ namespace User_App
         private void createNewSensorButton_Click(object sender, EventArgs e)
         {
             sensorForm = new SensorForm(chambers, false);
+            sensorForm.Disposed += ChildForm_Disposed;
             sensorForm.BringToFront();
             sensorForm.TopMost = true;
             sensorForm.Focus();
             sensorForm.Show();
+        }
+
+        private void editExistingChamberButton_Click(object sender, EventArgs e)
+        {
+            chamberForm = new ChamberForm(chambers, true);
+            chamberForm.Disposed += ChildForm_Disposed;
+            chamberForm.BringToFront();
+            chamberForm.TopMost = true;
+            chamberForm.Focus();
+            chamberForm.Show();
+        }
+
+        private void editSensorMenuButton_Click(object sender, EventArgs e)
+        {
+            sensorForm = new SensorForm(chambers, true);
+            sensorForm.Disposed += ChildForm_Disposed;
+            sensorForm.BringToFront();
+            sensorForm.TopMost = true;
+            sensorForm.Focus();
+            sensorForm.Show();
+        }
+
+        private void deleteChamberMenuButton_Click(object sender, EventArgs e)
+        {
+            deleteForm = new DeleteForm(chambers, false);
+            deleteForm.Disposed += ChildForm_Disposed;
+            deleteForm.BringToFront();
+            deleteForm.TopMost = true;
+            deleteForm.Focus();
+            deleteForm.Show();
+        }
+
+        private void deleteSensorMenuButton_Click(object sender, EventArgs e)
+        {
+            deleteForm = new DeleteForm(chambers, true);
+            deleteForm.Disposed += ChildForm_Disposed;
+            deleteForm.BringToFront();
+            deleteForm.TopMost = true;
+            deleteForm.Focus();
+            deleteForm.Show();
+        }
+
+        private void quitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Dispose();
+        }
+
+        private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //settings form if there's time
+            throw new NotImplementedException();
         }
     }
 }

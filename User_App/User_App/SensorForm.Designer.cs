@@ -37,7 +37,6 @@
             this.createNewButton = new System.Windows.Forms.RadioButton();
             this.editExistingButton = new System.Windows.Forms.RadioButton();
             this.sensorNameBox = new System.Windows.Forms.TextBox();
-            this.sensorIPBox = new System.Windows.Forms.TextBox();
             this.portBox = new System.Windows.Forms.TextBox();
             this.scaleBox = new System.Windows.Forms.TextBox();
             this.offsetBox = new System.Windows.Forms.TextBox();
@@ -46,6 +45,7 @@
             this.typeLabel = new System.Windows.Forms.Label();
             this.chamberLabel = new System.Windows.Forms.Label();
             this.sensorLabel = new System.Windows.Forms.Label();
+            this.sensorIPBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // sensorPicker
@@ -99,16 +99,17 @@
             // 
             // submitButton
             // 
-            this.submitButton.Location = new System.Drawing.Point(29, 395);
+            this.submitButton.Location = new System.Drawing.Point(29, 365);
             this.submitButton.Name = "submitButton";
             this.submitButton.Size = new System.Drawing.Size(75, 23);
             this.submitButton.TabIndex = 4;
             this.submitButton.Text = "Submit";
             this.submitButton.UseVisualStyleBackColor = true;
+            this.submitButton.Click += new System.EventHandler(this.submitButton_Click);
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(182, 395);
+            this.cancelButton.Location = new System.Drawing.Point(174, 365);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 5;
@@ -141,23 +142,15 @@
             // 
             // sensorNameBox
             // 
-            this.sensorNameBox.Location = new System.Drawing.Point(12, 190);
+            this.sensorNameBox.Location = new System.Drawing.Point(12, 181);
             this.sensorNameBox.Name = "sensorNameBox";
             this.sensorNameBox.Size = new System.Drawing.Size(121, 20);
             this.sensorNameBox.TabIndex = 8;
             this.sensorNameBox.Text = "Name";
             // 
-            // sensorIPBox
-            // 
-            this.sensorIPBox.Location = new System.Drawing.Point(12, 225);
-            this.sensorIPBox.Name = "sensorIPBox";
-            this.sensorIPBox.Size = new System.Drawing.Size(121, 20);
-            this.sensorIPBox.TabIndex = 9;
-            this.sensorIPBox.Text = "IP Address";
-            // 
             // portBox
             // 
-            this.portBox.Location = new System.Drawing.Point(12, 260);
+            this.portBox.Location = new System.Drawing.Point(12, 246);
             this.portBox.Name = "portBox";
             this.portBox.Size = new System.Drawing.Size(121, 20);
             this.portBox.TabIndex = 10;
@@ -165,7 +158,7 @@
             // 
             // scaleBox
             // 
-            this.scaleBox.Location = new System.Drawing.Point(12, 296);
+            this.scaleBox.Location = new System.Drawing.Point(12, 282);
             this.scaleBox.Name = "scaleBox";
             this.scaleBox.Size = new System.Drawing.Size(121, 20);
             this.scaleBox.TabIndex = 11;
@@ -173,7 +166,7 @@
             // 
             // offsetBox
             // 
-            this.offsetBox.Location = new System.Drawing.Point(13, 336);
+            this.offsetBox.Location = new System.Drawing.Point(12, 318);
             this.offsetBox.Name = "offsetBox";
             this.offsetBox.Size = new System.Drawing.Size(120, 20);
             this.offsetBox.TabIndex = 12;
@@ -182,7 +175,7 @@
             // enabledBox
             // 
             this.enabledBox.AutoSize = true;
-            this.enabledBox.Location = new System.Drawing.Point(184, 262);
+            this.enabledBox.Location = new System.Drawing.Point(184, 249);
             this.enabledBox.Name = "enabledBox";
             this.enabledBox.Size = new System.Drawing.Size(65, 17);
             this.enabledBox.TabIndex = 13;
@@ -225,11 +218,20 @@
             this.sensorLabel.TabIndex = 17;
             this.sensorLabel.Text = "Sensor";
             // 
+            // sensorIPBox
+            // 
+            this.sensorIPBox.Location = new System.Drawing.Point(12, 211);
+            this.sensorIPBox.Name = "sensorIPBox";
+            this.sensorIPBox.Size = new System.Drawing.Size(120, 20);
+            this.sensorIPBox.TabIndex = 20;
+            this.sensorIPBox.Text = "IP Address";
+            // 
             // SensorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(284, 425);
+            this.ClientSize = new System.Drawing.Size(284, 397);
+            this.Controls.Add(this.sensorIPBox);
             this.Controls.Add(this.sensorLabel);
             this.Controls.Add(this.chamberLabel);
             this.Controls.Add(this.typeLabel);
@@ -238,7 +240,6 @@
             this.Controls.Add(this.offsetBox);
             this.Controls.Add(this.scaleBox);
             this.Controls.Add(this.portBox);
-            this.Controls.Add(this.sensorIPBox);
             this.Controls.Add(this.sensorNameBox);
             this.Controls.Add(this.editExistingButton);
             this.Controls.Add(this.createNewButton);
@@ -267,7 +268,6 @@
         private System.Windows.Forms.RadioButton createNewButton;
         private System.Windows.Forms.RadioButton editExistingButton;
         private System.Windows.Forms.TextBox sensorNameBox;
-        private System.Windows.Forms.TextBox sensorIPBox;
         private System.Windows.Forms.TextBox portBox;
         private System.Windows.Forms.TextBox scaleBox;
         private System.Windows.Forms.TextBox offsetBox;
@@ -276,5 +276,6 @@
         private System.Windows.Forms.Label typeLabel;
         private System.Windows.Forms.Label chamberLabel;
         private System.Windows.Forms.Label sensorLabel;
+        private System.Windows.Forms.TextBox sensorIPBox;
     }
 }

@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
 using System.Windows.Forms;
 
 namespace User_App
@@ -84,166 +80,58 @@ namespace User_App
 
         private void cancelButton_Click(object sender, EventArgs e)
         {
-            this.Dispose();
+            String message = "Are you sure you want to cancel?";
+            String caption = "Confirm";
+            MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+            DialogResult result = MessageBox.Show(message, caption, buttons);
+            if(result == DialogResult.Yes)
+            {
+                this.Dispose();
+            }
         }
 
-        private void ValidateInput()
+        private Boolean ValidateInput(String sensorPort, String sensorType, String sensorScale, String sensorOffset, String sensorRegister, Chamber chamber, String sensorAddress)
         {
-
+            int register = 0;
+            int type = 0;
+            try
+            {
+                int.Parse(sensorPort);
+                type = int.Parse(sensorType);
+                double.Parse(sensorScale);
+                double.Parse(sensorOffset);
+                register = int.Parse(sensorRegister);
+                System.Net.IPAddress.Parse(sensorAddress);
+            }catch(Exception e)
+            {
+                MessageBoxButtons btns = MessageBoxButtons.OK;
+                String caption = "Error";
+                MessageBox.Show(e.Message, caption, btns);
+                return false;
+            }
+            if (register > 0 && register <= 8 && type >= 0 && type <=3 && chamber !=null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private void UpdateFields(Sensor s)
         {
             if (s != null)
             {
-                SetChamberPicker(GetChamberByID(s.ChamberID));
-                SetRegisterPicker(s.Register);
-                SetTypePicker(s.SensorType);
-                SetSensorNameBox(s.Description);
-                SetSensorIPBox(s.Address);
-                SetPortBox(s.Port.ToString());
-                SetScaleBox(s.Scale.ToString());
-                SetOffsetBox(s.Offset.ToString());
-                SetSensorEnabled(true);
-            }
-        }
-
-        delegate void SetChamberPickerCallback(Chamber c);
-        private void SetChamberPicker(Chamber c)
-        {
-            if (this.chamberPicker.InvokeRequired)
-            {
-                SetChamberPickerCallback p = new SetChamberPickerCallback(SetChamberPicker);
-                this.Invoke(p, new object[] { c });
-            }
-            else
-            {
-                this.chamberPicker.SelectedValue = c;
-            }
-        }
-
-        delegate void SetRegisterPickerCallback(int register);
-        private void SetRegisterPicker(int register)
-        {
-            if (this.registerPicker.InvokeRequired)
-            {
-                SetRegisterPickerCallback p = new SetRegisterPickerCallback(SetRegisterPicker);
-                this.Invoke(p, new object[] { register });
-            }
-            else
-            {
-                this.registerPicker.SelectedValue = register;
-            }
-        }
-
-        delegate void SetSensorNameBoxCallback(String name);
-        private void SetSensorNameBox(String name)
-        {
-            if (this.sensorNameBox.InvokeRequired)
-            {
-                SetSensorNameBoxCallback p = new SetSensorNameBoxCallback(SetSensorNameBox);
-                this.Invoke(p, new object[] { name });
-            }
-            else
-            {
-                this.sensorNameBox.Text = name;
-            }
-        }
-
-        delegate void SetSensorIPBoxCallback(String ip);
-        private void SetSensorIPBox(String ip)
-        {
-            if (this.sensorIPBox.InvokeRequired)
-            {
-                SetSensorIPBoxCallback p = new SetSensorIPBoxCallback(SetSensorIPBox);
-                this.Invoke(p, new object[] { ip });
-            }
-            else
-            {
-                this.sensorIPBox.Text = ip;
-            }
-        }
-
-        delegate void SetPortBoxCallback(String port);
-        private void SetPortBox(String port)
-        {
-            if (this.portBox.InvokeRequired)
-            {
-                SetPortBoxCallback p = new SetPortBoxCallback(SetPortBox);
-                this.Invoke(p, new object[] { port });
-            }
-            else
-            {
-                this.portBox.Text = port;
-            }
-        }
-
-        delegate void SetScaleBoxCallback(String scale);
-        private void SetScaleBox(String scale)
-        {
-            if (this.scaleBox.InvokeRequired)
-            {
-                SetScaleBoxCallback p = new SetScaleBoxCallback(SetScaleBox);
-                this.Invoke(p, new object[] { scale });
-            }
-            else
-            {
-                this.scaleBox.Text = scale;
-            }
-        }
-
-        delegate void SetOffsetBoxCallback(String offset);
-        private void SetOffsetBox(String offset)
-        {
-            if (this.offsetBox.InvokeRequired)
-            {
-                SetOffsetBoxCallback p = new SetOffsetBoxCallback(SetOffsetBox);
-                this.Invoke(p, new object[] { offset });
-            }
-            else
-            {
-                this.offsetBox.Text = offset;
-            }
-        }
-
-        delegate void SetSensorEnabledCallback(Boolean enabled);
-        private void SetSensorEnabled(Boolean enabled)
-        {
-            if (this.enabledBox.InvokeRequired)
-            {
-                SetSensorEnabledCallback p = new SetSensorEnabledCallback(SetSensorEnabled);
-                this.Invoke(p, new object[] { enabled });
-            }
-            else
-            {
-                this.enabledBox.Checked = enabled;
-            }
-        }
-
-        delegate void SetTypePickerCallback(int type);
-        private void SetTypePicker(int type)
-        {
-            if (this.typePicker.InvokeRequired)
-            {
-                SetTypePickerCallback p = new SetTypePickerCallback(SetRegisterPicker);
-                this.Invoke(p, new object[] { type });
-            }
-            else
-            {
-                switch (type)
-                {
-                    case 0:
-                        this.typePicker.SelectedValue = "Temperature";
-                        break;
-
-                    case 1:
-                        this.typePicker.SelectedValue = "Pressure";
-                        break;
-
-                    case 2:
-                        this.typePicker.SelectedValue = "Humidity";
-                        break;
-                }
+                chamberPicker.SelectedValue = (GetChamberByID(s.ChamberID));
+                registerPicker.SelectedIndex = s.Register - 1;
+                typePicker.SelectedIndex = s.SensorType;
+                sensorNameBox.Text = s.Description;
+                sensorIPBox.Text = s.Address;
+                portBox.Text = s.Port.ToString();
+                scaleBox.Text = s.Scale.ToString();
+                offsetBox.Text = s.Offset.ToString();
+                enabledBox.Checked = true;
             }
         }
 
@@ -276,6 +164,87 @@ namespace User_App
             {
                 offsetBox.Enabled = true;
                 scaleBox.Enabled = true;
+            }
+        }
+
+        private void submitButton_Click(object sender, EventArgs e)
+        {
+            Sensor s = (Sensor)sensorPicker.SelectedValue;
+            int sensorID = s.ID;
+            String sensorName = sensorNameBox.Text;
+            String sensorAddress = sensorIPBox.Text;
+            String sensorType = typePicker.SelectedIndex.ToString();
+            String sensorScale = scaleBox.Text;
+            String sensorOffset = offsetBox.Text;
+            Chamber chamber = (Chamber)chamberPicker.SelectedValue;
+            String sensorPort = portBox.Text;
+            String sensorRegister = (registerPicker.SelectedIndex + 1).ToString();
+            Boolean sensorEnabled = enabledBox.Checked;
+
+            String args = "";
+            if (ValidateInput(sensorPort, sensorType, sensorScale, sensorOffset, sensorRegister, chamber, sensorAddress))
+            {
+                if (editExistingButton.Checked == true)
+                {
+                    args = "editSensor " + sensorID.ToString() + " \"" + sensorName + "\" " + sensorEnabled.ToString() + " " + sensorType + " " + chamber.ID.ToString() + " \"" + sensorAddress + "\" " + sensorPort + " " + sensorRegister + " " + sensorScale + " " + sensorOffset;
+                }
+                else
+                {
+                    args = "addSensor \"" + sensorAddress + "\" " + sensorPort + " " + sensorType + " " + chamber.ID.ToString() + " " + sensorRegister + " " + sensorScale + " " + sensorOffset + " \"" + sensorName + "\" " + sensorEnabled.ToString();
+                }
+                Boolean success = DeserialiseProcessorOutput(CallProcessor(args));
+                if (success)
+                {
+                    String message = "Success";
+                    String caption = "Success";
+                    MessageBoxButtons btns = MessageBoxButtons.OK;
+                    DialogResult result = MessageBox.Show(message, caption, btns);
+                    if (result == DialogResult.OK)
+                    {
+                        this.Dispose();
+                    }
+                }
+                else
+                {
+                    String message = "An error has occured with the processing application";
+                    String caption = "Error";
+                    MessageBoxButtons btns = MessageBoxButtons.OK;
+                    MessageBox.Show(message, caption, btns);
+                }
+            }
+        }
+
+        private String CallProcessor(string args)
+        {
+            ProcessStartInfo start = new ProcessStartInfo
+            {
+                FileName = @"..\..\Resources\ProcessingApplication.exe",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                Arguments = args,
+                RedirectStandardOutput = true
+            };
+            String result;
+            using (Process process = Process.Start(start))
+            {
+                using (StreamReader reader = process.StandardOutput)
+                {
+                    result = reader.ReadToEnd();
+                }
+            }
+            return result;
+        }
+
+        private Boolean DeserialiseProcessorOutput(String output)
+        {
+            if (output.Contains("<Success value=\"True\" />"))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }

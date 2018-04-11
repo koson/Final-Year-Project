@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace User_App
@@ -15,7 +9,6 @@ namespace User_App
     public partial class ChamberForm : Form
     {
         Chamber[] chambers;
-        DialogForm dialog;
         public ChamberForm(Chamber[] newChambers, bool editExisting)
         {
             InitializeComponent();
@@ -34,6 +27,8 @@ namespace User_App
 
         private void ChamberForm_Load(object sender, EventArgs e)
         {
+            this.AcceptButton = chamberSubmitButton;
+            this.CancelButton = chamberCancelButton;
             chamberIDPicker.DisplayMember = "Text";
             chamberIDPicker.ValueMember = "Value";
 
@@ -58,7 +53,7 @@ namespace User_App
                 if (existingChamberOption.Checked == true)
                 {
                     chamberID = (int)((Chamber)chamberIDPicker.SelectedValue).ID;
-                    args = "editChamber " + chamberID + " \"" + chamberDescription + "\" \"" + chamberName + "\"";
+                    args = "editChamber " + chamberID + " \"" + chamberName + "\" \"" + chamberDescription + "\"";
                 }
                 else
                 {
@@ -69,23 +64,31 @@ namespace User_App
 
                 if (success)
                 {
-                    dialog = new DialogForm();
-                    //success
-                    //close form
+                    String message = "Success";
+                    String caption = "Success";
+                    MessageBoxButtons btns = MessageBoxButtons.OK;
+                    DialogResult result = MessageBox.Show(message, caption, btns);
+                    if(result == DialogResult.OK)
+                    {
+                        this.Dispose();
+                    }
                 }
                 else
                 {
-                    dialog = new DialogForm();
-                    //error with processor
+                    String message = "An error has occured with the processing application";
+                    String caption = "Error";
+                    MessageBoxButtons btns = MessageBoxButtons.OK;
+                    MessageBox.Show(message, caption, btns);
                 }
             }
             else
             {
-                //error validating input
-                dialog = new DialogForm();
+                String message = "You have entered an invalid name or description";
+                String caption = "Error";
+                MessageBoxButtons btns = MessageBoxButtons.OK;
+                MessageBox.Show(message, caption, btns);
             }
         }
-
 
         private Boolean validateInput(String name, String description)
         {
@@ -103,7 +106,7 @@ namespace User_App
         {
             ProcessStartInfo start = new ProcessStartInfo
             {
-                FileName = @"C:\Users\Raife\source\repos\Final-Year-Project\ProcessingApplication\ProcessingApplication\bin\Debug\ProcessingApplication.exe",
+                FileName = @"..\..\Resources\ProcessingApplication.exe",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
@@ -138,12 +141,39 @@ namespace User_App
             if(newChamberOption.Checked == true)
             {
                 chamberIDPicker.Enabled = false;
+                newChamberName.Text = "Name";
+                newChamberDescription.Text = "Description";
                 //disable ID pick option
             }
             else
             {
                 chamberIDPicker.Enabled = true;
+                UpdateFields();
                 //enable ID pick option
+            }
+        }
+        
+        private void UpdateFields()
+        {
+            Chamber c = (Chamber)chamberIDPicker.SelectedValue;
+            newChamberName.Text = c.Name;
+            newChamberDescription.Text = c.Description;
+        }
+
+        private void chamberIDPicker_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateFields();
+        }
+
+        private void chamberCancelButton_Click(object sender, EventArgs e)
+        {
+            String message = "Are you sure you want to cancel?";
+            String caption = "Confirm";
+            MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+            DialogResult result = MessageBox.Show(message, caption, buttons);
+            if (result == DialogResult.Yes)
+            {
+                this.Dispose();
             }
         }
     }

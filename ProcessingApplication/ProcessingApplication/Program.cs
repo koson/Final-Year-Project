@@ -125,8 +125,8 @@ namespace ProcessingApplication
 
                     try
                     {
-                        chamberDescription = args[1 + offset];
-                        chamberName = args[2 + offset];
+                        chamberDescription = args[2 + offset];
+                        chamberName = args[1 + offset];
                         parseSuccessful = true;
                     }
                     catch (Exception e)

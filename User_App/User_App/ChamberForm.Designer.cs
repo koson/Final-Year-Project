@@ -39,11 +39,12 @@
             // 
             // chamberSubmitButton
             // 
+            this.chamberSubmitButton.DialogResult = System.Windows.Forms.DialogResult.Yes;
             this.chamberSubmitButton.Location = new System.Drawing.Point(20, 380);
             this.chamberSubmitButton.Name = "chamberSubmitButton";
             this.chamberSubmitButton.Size = new System.Drawing.Size(75, 23);
             this.chamberSubmitButton.TabIndex = 0;
-            this.chamberSubmitButton.Text = "OK";
+            this.chamberSubmitButton.Text = "Submit";
             this.chamberSubmitButton.UseVisualStyleBackColor = true;
             this.chamberSubmitButton.Click += new System.EventHandler(this.chamberSubmitButton_Click);
             // 
@@ -93,6 +94,7 @@
             this.chamberIDPicker.Name = "chamberIDPicker";
             this.chamberIDPicker.Size = new System.Drawing.Size(121, 21);
             this.chamberIDPicker.TabIndex = 5;
+            this.chamberIDPicker.SelectedIndexChanged += new System.EventHandler(this.chamberIDPicker_SelectedIndexChanged);
             // 
             // chamberCancelButton
             // 
@@ -102,6 +104,7 @@
             this.chamberCancelButton.TabIndex = 6;
             this.chamberCancelButton.Text = "Cancel";
             this.chamberCancelButton.UseVisualStyleBackColor = true;
+            this.chamberCancelButton.Click += new System.EventHandler(this.chamberCancelButton_Click);
             // 
             // ChamberForm
             // 
