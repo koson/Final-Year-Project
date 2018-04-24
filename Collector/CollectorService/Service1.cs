@@ -173,10 +173,10 @@ namespace CollectorService
                     reading = CalculateTemperature(regValue);
                     break;
                 case 1:
-                    reading = CalculatePressure(regValue, sensor.Scale, sensor.Offset);
+                    reading = CalculateHumidity(regValue, sensor.Scale, sensor.Offset);
                     break;
                 case 2:
-                    reading = CalculateHumidity(regValue, sensor.Scale, sensor.Offset);
+                    reading = CalculatePressure(regValue, sensor.Scale, sensor.Offset);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("Sensor.SensorType");
@@ -272,6 +272,7 @@ namespace CollectorService
                                 returned.GetString(1),
                                 "Modbus"));
                         }
+                        returned2.Close();
                     }
                 }
                 connection.Close();

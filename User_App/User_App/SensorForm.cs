@@ -6,11 +6,19 @@ using System.Windows.Forms;
 
 namespace User_App
 {
+    /// <summary>
+    /// Class for displaying form allowing creation/editing of sensors within the system
+    /// </summary>
     public partial class SensorForm : Form
     {
         Chamber[] chambers;
         Sensor[] sensors;
         bool editing;
+        /// <summary>
+        /// constructor method. Initialises form and sets globals
+        /// </summary>
+        /// <param name="chambers">current array of chambers from the main program window</param>
+        /// <param name="editExisting"> boolean for whether form is for editing or creating sensors</param>
         public SensorForm(Chamber[] chambers, bool editExisting)
         {
             this.sensors = GetAllSensors(chambers);
@@ -19,6 +27,11 @@ namespace User_App
             InitializeComponent();
         }
 
+        /// <summary>
+        /// load method. sets contents of sensor combobox and chamber combobox
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void SensorForm_Load(object sender, EventArgs e)
         {
             chamberPicker.DisplayMember = "Text";
@@ -52,6 +65,11 @@ namespace User_App
             sensorPicker.DataSource = items2;
         }
 
+        /// <summary>
+        /// handles the changing of the radio buttons. enables or disables sensor combobox
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void createNewOption_CheckedChanged(object sender, EventArgs e)
         {
             if (createNewButton.Checked == true)
@@ -65,6 +83,12 @@ namespace User_App
                 //enable ID pick option
             }
         }
+
+        /// <summary>
+        /// method to get all sensors for all chambers
+        /// </summary>
+        /// <param name="chambers">array of chamber to get sensors for</param>
+        /// <returns>array of sensors</returns>
         private Sensor[] GetAllSensors(Chamber[] chambers)
         {
             List<Sensor> sensors = new List<Sensor>();
@@ -78,6 +102,11 @@ namespace User_App
             return sensors.ToArray();
         }
 
+        /// <summary>
+        /// method handling the cancellatiob of the form
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cancelButton_Click(object sender, EventArgs e)
         {
             String message = "Are you sure you want to cancel?";
@@ -90,13 +119,28 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method for validating form input.
+        /// checks valid IP address
+        /// checks for positive, integer port value
+        /// checks for parsable scale and offset values
+        /// </summary>
+        /// <param name="sensorPort"> the value of the sensor port input box</param>
+        /// <param name="sensorType">the value of the sensor type input box</param>
+        /// <param name="sensorScale">the value of the sensor scale input box</param>
+        /// <param name="sensorOffset">the value of the sensor offset input box</param>
+        /// <param name="sensorRegister">the value of the sensor register picker</param>
+        /// <param name="chamber">the value of the chamber selection box</param>
+        /// <param name="sensorAddress">the value of the sensor IP address input box</param>
+        /// <returns>returns true if all values are valid</returns>
         private Boolean ValidateInput(String sensorPort, String sensorType, String sensorScale, String sensorOffset, String sensorRegister, Chamber chamber, String sensorAddress)
         {
             int register = 0;
             int type = 0;
+            int port = 0;
             try
             {
-                int.Parse(sensorPort);
+                port = int.Parse(sensorPort);
                 type = int.Parse(sensorType);
                 double.Parse(sensorScale);
                 double.Parse(sensorOffset);
@@ -109,7 +153,7 @@ namespace User_App
                 MessageBox.Show(e.Message, caption, btns);
                 return false;
             }
-            if (register > 0 && register <= 8 && type >= 0 && type <=3 && chamber !=null)
+            if (register > 0 && register <= 8 && type >= 0 && type <=3 && chamber !=null && port > 0)
             {
                 return true;
             }
@@ -119,6 +163,10 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// method to update form. Populates all fields if edit existing option is checked
+        /// </summary>
+        /// <param name="s"></param>
         private void UpdateFields(Sensor s)
         {
             if (s != null)
@@ -135,6 +183,11 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method to get a chamber object for a given ID
+        /// </summary>
+        /// <param name="id">integer value for the chamber ID</param>
+        /// <returns>returns the chamber object, null if chamber does not exist</returns>
         private Chamber GetChamberByID(int id)
         {
             Chamber toReturn = null;
@@ -148,11 +201,21 @@ namespace User_App
             return toReturn;
         }
 
+        /// <summary>
+        /// method to handle the change in existing sensor to edit. calls form update
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void sensorPicker_SelectedValueChanged(object sender, EventArgs e)
         {
             UpdateFields((Sensor)sensorPicker.SelectedValue);
         }
 
+        /// <summary>
+        /// handles a change in the type picker combobox. Disables scale and offset inputs if type is temperature
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void typePicker_SelectedValueChanged(object sender, EventArgs e)
         {
             if(typePicker.SelectedIndex == 0) //temperature
@@ -167,10 +230,21 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method to handle form submission. Valiedates input then calls processing application
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void submitButton_Click(object sender, EventArgs e)
         {
-            Sensor s = (Sensor)sensorPicker.SelectedValue;
-            int sensorID = s.ID;
+            Sensor s;
+            int sensorID = 0;
+            if(sensorPicker.SelectedValue !=null)
+            {
+                s = (Sensor)sensorPicker.SelectedValue;
+                sensorID = s.ID;
+            }
+            
             String sensorName = sensorNameBox.Text;
             String sensorAddress = sensorIPBox.Text;
             String sensorType = typePicker.SelectedIndex.ToString();
@@ -214,6 +288,11 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method to call processing application
+        /// </summary>
+        /// <param name="args">the command line parameters for the processing application</param>
+        /// <returns>XML output of processing application</returns>
         private String CallProcessor(string args)
         {
             ProcessStartInfo start = new ProcessStartInfo
@@ -236,6 +315,11 @@ namespace User_App
             return result;
         }
 
+        /// <summary>
+        /// Parses processor output
+        /// </summary>
+        /// <param name="output"></param>
+        /// <returns>parsed boolean indicating a successful run of the processor</returns>
         private Boolean DeserialiseProcessorOutput(String output)
         {
             if (output.Contains("<Success value=\"True\" />"))

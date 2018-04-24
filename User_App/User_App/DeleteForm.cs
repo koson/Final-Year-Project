@@ -6,11 +6,19 @@ using System.Windows.Forms;
 
 namespace User_App
 {
+    /// <summary>
+    /// Class for displaying the delete chambers/sensors form
+    /// </summary>
     public partial class DeleteForm : Form
     {
         Chamber[] chambers;
         Sensor[] sensors;
         Boolean sensor;
+        /// <summary>
+        /// class constructor
+        /// </summary>
+        /// <param name="chambers"> The main chambers array passed from the main application window</param>
+        /// <param name="sensor"> whether the form was called to delete sensors or not</param>
         public DeleteForm(Chamber[] chambers, Boolean sensor)
         {
             this.sensor = sensor;
@@ -29,6 +37,10 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// changes the items within the combobox
+        /// </summary>
+        /// <param name="areSensors"> true sets the combobox to sensors</param>
         private void changePickerItems(Boolean areSensors)
         {
             toDeletePicker.DisplayMember = "Text";
@@ -52,6 +64,10 @@ namespace User_App
             toDeletePicker.DataSource = items;
         }
 
+        /// <summary>
+        /// method to put sensors from all chambers into a single array
+        /// </summary>
+        /// <returns>an array of sensors</returns>
         private Sensor[] MakeSensorArray()
         {
             List<Sensor> sensors = new List<Sensor>();
@@ -65,6 +81,11 @@ namespace User_App
             return sensors.ToArray();
         }
 
+        /// <summary>
+        /// Action completed after cancel button is clicked - whole form closed after confirmation
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cancelButton_Click(object sender, EventArgs e)
         {
             String message = "Are you sure you want to cancel?";
@@ -77,6 +98,11 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Action after submit button is clicked. Processing application called to delete currently selected item
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void submitButton_Click(object sender, EventArgs e)
         {
             if(deleteChamberOption.Checked == true)
@@ -139,6 +165,11 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method called when radio buttons changed. Calls the changePickerItems method
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void deleteChamberOption_CheckedChanged(object sender, EventArgs e)
         {
             if(deleteChamberOption.Checked == true)
@@ -151,6 +182,11 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method to call the processor application
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns>the result of the processor (XML string)</returns>
         private String CallProcessor(string args)
         {
             ProcessStartInfo start = new ProcessStartInfo
@@ -173,6 +209,11 @@ namespace User_App
             return result;
         }
 
+        /// <summary>
+        /// deserialises processor output
+        /// </summary>
+        /// <param name="output"></param>
+        /// <returns>parsed boolean value from the XML string</returns>
         private Boolean DeserialiseProcessorOutput(String output)
         {
             if (output.Contains("<Success value=\"True\" />"))
@@ -185,6 +226,11 @@ namespace User_App
             }
         }
 
+        /// <summary>
+        /// Method called when form is loaded. picker items initially populated
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DeleteForm_Load(object sender, EventArgs e)
         {
             changePickerItems(sensor);

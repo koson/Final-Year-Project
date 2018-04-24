@@ -28,10 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea9 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend9 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea10 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend10 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.liveChartTab = new System.Windows.Forms.TabPage();
             this.liveChartSplitContainer = new System.Windows.Forms.SplitContainer();
@@ -53,6 +53,7 @@
             this.exportToExcelBtn = new System.Windows.Forms.Button();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.existingChamberToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newChamberMenuButton = new System.Windows.Forms.ToolStripMenuItem();
@@ -77,7 +78,6 @@
             this.sixHourRange = new System.Windows.Forms.ToolStripMenuItem();
             this.twelveHourRange = new System.Windows.Forms.ToolStripMenuItem();
             this.twentyFourHourRange = new System.Windows.Forms.ToolStripMenuItem();
-            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1.SuspendLayout();
             this.liveChartTab.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.liveChartSplitContainer)).BeginInit();
@@ -146,23 +146,23 @@
             // 
             // liveChart
             // 
-            chartArea9.AxisX.IsLabelAutoFit = false;
-            chartArea9.AxisX.LabelStyle.Angle = -45;
-            chartArea9.AxisY.IsStartedFromZero = false;
-            chartArea9.AxisY.MajorGrid.Interval = 20D;
-            chartArea9.AxisY.MajorTickMark.Interval = 10D;
-            chartArea9.AxisY.Maximum = 100D;
-            chartArea9.AxisY.Minimum = -40D;
-            chartArea9.AxisY.Title = "Temperature (C) & Relative Humidity (%)";
-            chartArea9.AxisY2.MajorTickMark.Interval = 200D;
-            chartArea9.AxisY2.Maximum = 1000D;
-            chartArea9.AxisY2.Minimum = 0D;
-            chartArea9.AxisY2.Title = "Pressure (mbar) (a)";
-            chartArea9.Name = "ChartArea1";
-            this.liveChart.ChartAreas.Add(chartArea9);
+            chartArea1.AxisX.IsLabelAutoFit = false;
+            chartArea1.AxisX.LabelStyle.Angle = -45;
+            chartArea1.AxisY.IsStartedFromZero = false;
+            chartArea1.AxisY.MajorGrid.Interval = 20D;
+            chartArea1.AxisY.MajorTickMark.Interval = 10D;
+            chartArea1.AxisY.Maximum = 100D;
+            chartArea1.AxisY.Minimum = -40D;
+            chartArea1.AxisY.Title = "Temperature (C) & Relative Humidity (%)";
+            chartArea1.AxisY2.MajorTickMark.Interval = 200D;
+            chartArea1.AxisY2.Maximum = 1000D;
+            chartArea1.AxisY2.Minimum = 0D;
+            chartArea1.AxisY2.Title = "Pressure (mbar) (a)";
+            chartArea1.Name = "ChartArea1";
+            this.liveChart.ChartAreas.Add(chartArea1);
             this.liveChart.Dock = System.Windows.Forms.DockStyle.Fill;
-            legend9.Name = "Legend1";
-            this.liveChart.Legends.Add(legend9);
+            legend1.Name = "Legend1";
+            this.liveChart.Legends.Add(legend1);
             this.liveChart.Location = new System.Drawing.Point(0, 0);
             this.liveChart.Name = "liveChart";
             this.liveChart.Size = new System.Drawing.Size(1200, 697);
@@ -240,28 +240,27 @@
             // 
             // customChart
             // 
-            chartArea10.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.True;
-            chartArea10.AxisX.IntervalAutoMode = System.Windows.Forms.DataVisualization.Charting.IntervalAutoMode.VariableCount;
-            chartArea10.AxisX.IsLabelAutoFit = false;
-            chartArea10.AxisX.LabelStyle.Angle = -45;
-            chartArea10.AxisX.MajorGrid.Interval = 0D;
-            chartArea10.AxisY.Interval = 20D;
-            chartArea10.AxisY.IsStartedFromZero = false;
-            chartArea10.AxisY.MajorGrid.Interval = 20D;
-            chartArea10.AxisY.MajorTickMark.Interval = 20D;
-            chartArea10.AxisY.Maximum = 100D;
-            chartArea10.AxisY.Minimum = -40D;
-            chartArea10.AxisY.Title = "Temperature (C) & Relative Humidity (%)";
-            chartArea10.AxisY2.MajorGrid.Enabled = false;
-            chartArea10.AxisY2.MajorTickMark.Interval = 200D;
-            chartArea10.AxisY2.Maximum = 1000D;
-            chartArea10.AxisY2.Minimum = 0D;
-            chartArea10.AxisY2.Title = "Pressure (mbar) (a)";
-            chartArea10.Name = "ChartArea1";
-            this.customChart.ChartAreas.Add(chartArea10);
+            chartArea2.AxisX.IntervalAutoMode = System.Windows.Forms.DataVisualization.Charting.IntervalAutoMode.VariableCount;
+            chartArea2.AxisX.IsLabelAutoFit = false;
+            chartArea2.AxisX.LabelStyle.Angle = -45;
+            chartArea2.AxisX.MajorGrid.Interval = 0D;
+            chartArea2.AxisY.Interval = 20D;
+            chartArea2.AxisY.IsStartedFromZero = false;
+            chartArea2.AxisY.MajorGrid.Interval = 20D;
+            chartArea2.AxisY.MajorTickMark.Interval = 20D;
+            chartArea2.AxisY.Maximum = 100D;
+            chartArea2.AxisY.Minimum = -40D;
+            chartArea2.AxisY.Title = "Temperature (C) & Relative Humidity (%)";
+            chartArea2.AxisY2.MajorGrid.Enabled = false;
+            chartArea2.AxisY2.MajorTickMark.Interval = 200D;
+            chartArea2.AxisY2.Maximum = 1000D;
+            chartArea2.AxisY2.Minimum = 0D;
+            chartArea2.AxisY2.Title = "Pressure (mbar) (a)";
+            chartArea2.Name = "ChartArea1";
+            this.customChart.ChartAreas.Add(chartArea2);
             this.customChart.Dock = System.Windows.Forms.DockStyle.Fill;
-            legend10.Name = "Legend1";
-            this.customChart.Legends.Add(legend10);
+            legend2.Name = "Legend1";
+            this.customChart.Legends.Add(legend2);
             this.customChart.Location = new System.Drawing.Point(0, 0);
             this.customChart.Name = "customChart";
             this.customChart.Size = new System.Drawing.Size(1162, 697);
@@ -363,9 +362,16 @@
             // quitToolStripMenuItem
             // 
             this.quitToolStripMenuItem.Name = "quitToolStripMenuItem";
-            this.quitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.quitToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
+            // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // editToolStripMenuItem
             // 
@@ -383,20 +389,20 @@
             this.newChamberMenuButton,
             this.createNewSensorButton});
             this.existingChamberToolStripMenuItem.Name = "existingChamberToolStripMenuItem";
-            this.existingChamberToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.existingChamberToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
             this.existingChamberToolStripMenuItem.Text = "Create New";
             // 
             // newChamberMenuButton
             // 
             this.newChamberMenuButton.Name = "newChamberMenuButton";
-            this.newChamberMenuButton.Size = new System.Drawing.Size(180, 22);
+            this.newChamberMenuButton.Size = new System.Drawing.Size(123, 22);
             this.newChamberMenuButton.Text = "Chamber";
             this.newChamberMenuButton.Click += new System.EventHandler(this.newChamberMenuButton_Click);
             // 
             // createNewSensorButton
             // 
             this.createNewSensorButton.Name = "createNewSensorButton";
-            this.createNewSensorButton.Size = new System.Drawing.Size(180, 22);
+            this.createNewSensorButton.Size = new System.Drawing.Size(123, 22);
             this.createNewSensorButton.Text = "Sensor";
             this.createNewSensorButton.Click += new System.EventHandler(this.createNewSensorButton_Click);
             // 
@@ -406,20 +412,20 @@
             this.editExistingChamberButton,
             this.editSensorMenuButton});
             this.editExistingToolStripMenuItem.Name = "editExistingToolStripMenuItem";
-            this.editExistingToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.editExistingToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
             this.editExistingToolStripMenuItem.Text = "Edit Existing";
             // 
             // editExistingChamberButton
             // 
             this.editExistingChamberButton.Name = "editExistingChamberButton";
-            this.editExistingChamberButton.Size = new System.Drawing.Size(180, 22);
+            this.editExistingChamberButton.Size = new System.Drawing.Size(123, 22);
             this.editExistingChamberButton.Text = "Chamber";
             this.editExistingChamberButton.Click += new System.EventHandler(this.editExistingChamberButton_Click);
             // 
             // editSensorMenuButton
             // 
             this.editSensorMenuButton.Name = "editSensorMenuButton";
-            this.editSensorMenuButton.Size = new System.Drawing.Size(180, 22);
+            this.editSensorMenuButton.Size = new System.Drawing.Size(123, 22);
             this.editSensorMenuButton.Text = "Sensor";
             this.editSensorMenuButton.Click += new System.EventHandler(this.editSensorMenuButton_Click);
             // 
@@ -429,20 +435,20 @@
             this.deleteChamberMenuButton,
             this.deleteSensorMenuButton});
             this.deleteExistingToolStripMenuItem.Name = "deleteExistingToolStripMenuItem";
-            this.deleteExistingToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.deleteExistingToolStripMenuItem.Size = new System.Drawing.Size(150, 22);
             this.deleteExistingToolStripMenuItem.Text = "Delete Existing";
             // 
             // deleteChamberMenuButton
             // 
             this.deleteChamberMenuButton.Name = "deleteChamberMenuButton";
-            this.deleteChamberMenuButton.Size = new System.Drawing.Size(180, 22);
+            this.deleteChamberMenuButton.Size = new System.Drawing.Size(123, 22);
             this.deleteChamberMenuButton.Text = "Chamber";
             this.deleteChamberMenuButton.Click += new System.EventHandler(this.deleteChamberMenuButton_Click);
             // 
             // deleteSensorMenuButton
             // 
             this.deleteSensorMenuButton.Name = "deleteSensorMenuButton";
-            this.deleteSensorMenuButton.Size = new System.Drawing.Size(180, 22);
+            this.deleteSensorMenuButton.Size = new System.Drawing.Size(123, 22);
             this.deleteSensorMenuButton.Text = "Sensor";
             this.deleteSensorMenuButton.Click += new System.EventHandler(this.deleteSensorMenuButton_Click);
             // 
@@ -560,13 +566,6 @@
             this.twentyFourHourRange.Size = new System.Drawing.Size(116, 22);
             this.twentyFourHourRange.Text = "24 Hour";
             this.twentyFourHourRange.Click += new System.EventHandler(this.twentyFourHourRange_Click);
-            // 
-            // settingsToolStripMenuItem
-            // 
-            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.settingsToolStripMenuItem.Text = "Settings";
-            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // MainForm
             // 
