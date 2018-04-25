@@ -11,6 +11,9 @@ using Excel = Microsoft.Office.Interop.Excel;
 
 namespace ProcessingApplication
 {
+    /// <summary>
+    /// Main class of the application
+    /// </summary>
     public class Program
     {
         private string databaseHost;
@@ -25,6 +28,12 @@ namespace ProcessingApplication
         bool debug;
         bool interactive;
 
+        /// <summary>
+        /// Method callsed when program is run.
+        /// initialises database connection details, gets chambers and sensors from database
+        /// calls main argument handling method
+        /// </summary>
+        /// <param name="args">command line argumets passed to application</param>
         public static void Main(string[] args)
         {
             Program p = new Program();
@@ -33,6 +42,10 @@ namespace ProcessingApplication
             p.HandleArguments(args);
         }
 
+        /// <summary>
+        /// Method for handling command line arguments. Completes requested command specified in arguments
+        /// </summary>
+        /// <param name="args">arguments passed to the application on the command line</param>
         public void HandleArguments(string[] args)
         {
             int offset = 0;
@@ -364,6 +377,9 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Initialises program by reading the configuration and setting up the database connection string
+        /// </summary>
         public void Initialise()
         {
             ReadProgramConfig();
@@ -373,6 +389,10 @@ namespace ProcessingApplication
                 + databaseUser + "; Password =" + databasePassword;
         }
 
+        /// <summary>
+        /// Method for printing help information to console. Only used when "verbose" command line option is passed
+        /// </summary>
+        /// <param name="commandName"></param>
         public void PrintUsageText(string commandName) //prints help guide on command line
         {
             switch (commandName)
@@ -484,11 +504,21 @@ namespace ProcessingApplication
             
         }
 
+        /// <summary>
+        /// Method to call methods for retrieving sensors and chambers from the database
+        /// </summary>
         public void GetEnvironment() //get all chambers and sensors in database (no actual reportable data)
         {
             chambers = GetChamberList();
             LoadAllSensors();
         }
+
+        /// <summary>
+        /// loads all sensors from database for a given chamber.
+        /// uses two database connections as sensor information is stored in multiple tables
+        /// </summary>
+        /// <param name="chamber">chamber object to load sensors for</param>
+        /// <returns>Array of sensors associated with the chamber</returns>
         public Sensor[] GetSensorsForChamber(Chamber chamber)
         {
             //get list of all sensors for a chamber
@@ -550,6 +580,11 @@ namespace ProcessingApplication
                 chambers[i].sensors = GetSensorsForChamber(chambers[i]);
             }
         }
+
+        /// <summary>
+        /// Gets all chambers from database
+        /// </summary>
+        /// <returns>array of chamber objects</returns>
         public Chamber[] GetChamberList()
         {
             //get list of all chambers
@@ -581,6 +616,13 @@ namespace ProcessingApplication
             return chambers.ToArray();
         }
 
+        /// <summary>
+        /// Gets all data records for a given sensor within the timeframe
+        /// </summary>
+        /// <param name="s">sensor object to get data for</param>
+        /// <param name="startTime">datetime represenrting the start date</param>
+        /// <param name="endTime">datetime representing the end date</param>
+        /// <returns>a dataset object containing the sensor ID and all of the retireved data</returns>
         public DataSet GetDataForSensor(Sensor s, DateTime startTime, DateTime endTime)
         {
             //get all data for a sensor in a timerange
@@ -618,6 +660,11 @@ namespace ProcessingApplication
             return new DataSet(returnedData.ToArray(), s.ID);
         }
         
+        /// <summary>
+        /// Method to get a chamber object by its chamber ID
+        /// </summary>
+        /// <param name="chamberID">integer ID of the chamber</param>
+        /// <returns>the chamber object. Null if it does not exist</returns>
         public Chamber GetChamberByID(int chamberID)
         {
             Chamber c = null;
@@ -631,6 +678,11 @@ namespace ProcessingApplication
             return c;
         }
 
+        /// <summary>
+        /// Method to get a sensor object by its ID
+        /// </summary>
+        /// <param name="sensorID">the integer ID of the sensor</param>
+        /// <returns>the sensor object. Null if it does not exist</returns>
         public Sensor GetSensorByID(int sensorID)
         {
             Sensor s = null;
@@ -647,6 +699,14 @@ namespace ProcessingApplication
             return s;
         }
 
+        /// <summary>
+        /// Method for producing an array of dataset to use as a graph. Dataset array contains datasets for all sensors associated within the chamber
+        /// </summary>
+        /// <param name="c">the chamber to produce the dataset for</param>
+        /// <param name="start">the start date</param>
+        /// <param name="end">the end date</param>
+        /// <param name="average">boolean to decide if data values should be averaged on a per-minute basis</param>
+        /// <returns>array of datasets to use as a graph</returns>
         DataSet[] ProduceGraphData(Chamber c, DateTime start, DateTime end, Boolean average)
         {
             DataSet tempDataSet = new DataSet();
@@ -665,6 +725,11 @@ namespace ProcessingApplication
         }
 
         //change to allow custom time intervals to average (based off user input in GUI)?
+        /// <summary>
+        /// Method to average data for a given dataset on a per-minute basis
+        /// </summary>
+        /// <param name="dataToAverage">the dataset to average</param>
+        /// <returns>the averaged data as a dataset</returns>
         public DataSet ProduceMeanValues(DataSet dataToAverage) //mean of all values for certain sensor type per minute within the time range
         {
             DataSet meanValues = new DataSet();
@@ -704,6 +769,14 @@ namespace ProcessingApplication
             return meanValues;
         }
 
+        /// <summary>
+        /// Method to export graph data to an excel spreadsheet.
+        /// creates the workbook and sets all the styling options.
+        /// Method also calls helper methods to sort input data so each timestamp is only used once within the spreadsheet
+        /// </summary>
+        /// <param name="chartData">the data to store as a graph</param>
+        /// <param name="filename">the full path filename of the destination spreadsheet</param>
+        /// <param name="chamberName">the name of the chamber (used as a chart title)</param>
         public void ExportToExcel(DataSet[] chartData, String filename, String chamberName)  //experimental version to test using 3 different series of time
         {
             //create workbook
@@ -830,6 +903,11 @@ namespace ProcessingApplication
             GC.Collect();
         }
 
+        /// <summary>
+        /// Sorts an array of datetime objects and removes duplicates
+        /// </summary>
+        /// <param name="chartData">the data to graph (only uses the timestamp data)</param>
+        /// <returns>a sorted array of datetime objects</returns>
         public DateTime[] SortDates(DataSet[] chartData)
         {
             List<DateTime> dates = new List<DateTime>();
@@ -847,6 +925,12 @@ namespace ProcessingApplication
             return dates.ToArray();
         }
 
+        /// <summary>
+        /// Method to add a chamber to the database
+        /// </summary>
+        /// <param name="name">the chamber name</param>
+        /// <param name="description">the chamber description</param>
+        /// <returns>boolean true/false to indicate success (or not)</returns>
         public Boolean AddChamber(String name, String description)
         {
             String query = "INSERT INTO Chamber (Name, Description) VALUES (@Name, @Description);";
@@ -884,6 +968,19 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Method to add a sensor to the database
+        /// </summary>
+        /// <param name="address">the IP address of the sensor</param>
+        /// <param name="port">the network port of the sensor</param>
+        /// <param name="type">the type of sensor</param>
+        /// <param name="chamberID">the ID of the chamber the sensor belongs to </param>
+        /// <param name="register">the register of the modbus device the sensor is connected to</param>
+        /// <param name="scale">the sensor scale</param>
+        /// <param name="offset">the sensor offset</param>
+        /// <param name="description">the sensor description (name)</param>
+        /// <param name="enabled">whether the sensor is enabled (used to determine if collector will poll the sensor or not)</param>
+        /// <returns>boolean true/false to indicate success</returns>
         public Boolean AddModbusSensor(String address, int port, int type, int chamberID, int register, double scale, double offset, String description, Boolean enabled) //add sensor to database
         {
             if(GetChamberByID(chamberID) != null)
@@ -956,6 +1053,11 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Method to remove a sensor from the database. This method also deletes all data records for the sensor - use carefully!
+        /// </summary>
+        /// <param name="sensorID">the ID of the sensor to remove</param>
+        /// <returns>boolean true/false to indicate success</returns>
         public Boolean RemoveModbusSensor(int sensorID) //delete Modbus_Info data as well
         {
             DeleteDataForSensor(sensorID);
@@ -995,6 +1097,11 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Method to remove a chamber from the database. This method removes all sensors (and therefore data records!) associated with it
+        /// </summary>
+        /// <param name="chamberID">the ID of the chamber to remove</param>
+        /// <returns>boolean true/false to indicate success</returns>
         public Boolean RemoveChamber(int chamberID)
         {
             if(GetChamberByID(chamberID) != null)
@@ -1043,6 +1150,20 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Method to edit an existing sensor in the database
+        /// </summary>
+        /// <param name="sensorID">The ID of the sensor to edit</param>
+        /// <param name="name">the new sensor description/name</param>
+        /// <param name="enabled">the new value to indicate if the sensor is enabled</param>
+        /// <param name="type">the new type of the sensor</param>
+        /// <param name="chamberID">the new ID of the chamber the sensor is associated with</param>
+        /// <param name="address">the new IP address of the sensor</param>
+        /// <param name="port">the new network port</param>
+        /// <param name="register">the new register of the modbus device the sensor is connected to</param>
+        /// <param name="scale">the new sensor scale</param>
+        /// <param name="offset">the new sensor offset</param>
+        /// <returns>boolean true/false to indicate success</returns>
         public Boolean EditModbusSensor(int sensorID, String name, bool enabled, int type, int chamberID, String address, int port, int register, double scale, double offset)
         {
             if(GetSensorByID(sensorID) != null)
@@ -1118,6 +1239,11 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Method which deletes all data records associated with a sensor
+        /// </summary>
+        /// <param name="sensorID">the ID of the sensor to delete data for</param>
+        /// <returns>boolean true/false to indicate sucess</returns>
         public Boolean DeleteDataForSensor(int sensorID)
         {
             String dataRecordQuery = "DELETE FROM Data_Record where Sensor_ID = @ID;";
@@ -1152,6 +1278,13 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Method to edit an existing chamber in the database
+        /// </summary>
+        /// <param name="chamberID">the ID of the chamber to edit</param>
+        /// <param name="name"the new chamber name></param>
+        /// <param name="description">the new chamber desctiption</param>
+        /// <returns>boolean true/false to indicate success</returns>
         public Boolean EditChamber(int chamberID, String name, String description)
         {
             if(GetChamberByID(chamberID) != null)
@@ -1199,6 +1332,11 @@ namespace ProcessingApplication
             
         }
 
+        /// <summary>
+        /// Method to convert all temperature values from celsius to fahrenheit
+        /// </summary>
+        /// <param name="temperatureValues">the dataset of temperature data</param>
+        /// <returns>a new dataset containing fahrenheit readings</returns>
         public DataSet ConvertToFarenheit(DataSet temperatureValues)
         {
             for(int i = 0; i < temperatureValues.Data.Length; i++)
@@ -1210,6 +1348,12 @@ namespace ProcessingApplication
             return temperatureValues;
         }
 
+        /// <summary>
+        /// Method to produce the XML output printed to the console by this program
+        /// </summary>
+        /// <param name="o">object to serialise</param>
+        /// <param name="success">boolean value to indicate whether the program has run correctly</param>
+        /// <returns>XML string</returns>
         String BuildXML(Object o, bool success) //serialize an object to XML for command line output
         {
             System.IO.StringWriter writer = new System.IO.StringWriter();
@@ -1231,6 +1375,9 @@ namespace ProcessingApplication
             return writer.ToString();
         }
 
+        /// <summary>
+        /// Reads configuration information for the program from app.config
+        /// </summary>
         void ReadProgramConfig()
         {
             try
@@ -1254,6 +1401,10 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Releases use of an object (used by Excel method)
+        /// </summary>
+        /// <param name="obj">object to release</param>
         private void releaseObject(object obj)
         {
             try
@@ -1275,6 +1426,9 @@ namespace ProcessingApplication
             }
         }
 
+        /// <summary>
+        /// Used for unit testing
+        /// </summary>
         public void SetConfigInUnitTests()
         {
             databaseHost = "169.254.121.230";
@@ -1288,21 +1442,37 @@ namespace ProcessingApplication
                 + databaseUser + "; Password =" + databasePassword;
         }
 
+        /// <summary>
+        /// Used to print the database connection string. Used in testing
+        /// </summary>
+        /// <returns></returns>
         public String GetConnectionString()
         {
             return connectionString;
         }
 
+        /// <summary>
+        /// Used to print the status of the interactive value. Determines if "verbose" option is used
+        /// </summary>
+        /// <returns>value of the interactive variable</returns>
         public Boolean GetInteractive()
         {
             return interactive;
         }
 
+        /// <summary>
+        /// Used to print the status of the debug value. Determines if "verbose" option is used
+        /// </summary>
+        /// <returns>value of the debug variable</returns>
         public Boolean GetDebug()
         {
             return debug;
         }
 
+        /// <summary>
+        /// Used to get the current array of chamber the program is working with. Used in testing
+        /// </summary>
+        /// <returns>an array of chamber objects</returns>
         public Chamber[] GetChambers()
         {
             return chambers;

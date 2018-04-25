@@ -7,6 +7,9 @@ using System.Xml.Serialization;
 
 namespace User_App
 {
+    /// <summary>
+    /// Class for representing chambers stored in the database
+    /// </summary>
     public class Chamber
     {
         [XmlAttribute("ID")]
@@ -19,6 +22,13 @@ namespace User_App
         [XmlArrayItem("Sensor")]
         public Sensor[] sensors { get; set; }
 
+        /// <summary>
+        /// Class constructor
+        /// </summary>
+        /// <param name="newID">ID of the chamber</param>
+        /// <param name="newName">Name of the chamber</param>
+        /// <param name="newDescription">Description of the chamber</param>
+        /// <param name="newSensors">Array of sensors which belong to the chamber</param>
         public Chamber(int newID, String newName, String newDescription, Sensor[] newSensors)
         {
             ID = newID;
@@ -27,11 +37,19 @@ namespace User_App
             sensors = newSensors;
         }
 
+        /// <summary>
+        /// Blank constructor used for XML serialisation
+        /// </summary>
         public Chamber()
         {
             //for serialization only
         }
 
+        /// <summary>
+        /// Returns the number of sensors associated with this chamber
+        /// </summary>
+        /// <param name="typeOfSensor">type of sensor to query</param>
+        /// <returns>number of sensors of specified type</returns>
         public int GetNumberOfSensors(int typeOfSensor) //counts number of sensors of given type. e.g. temperature, humidity or pressure sensors.
         {
             int number = 0;

@@ -7,6 +7,9 @@ using System.Xml.Serialization;
 
 namespace User_App
 {
+    /// <summary>
+    /// Class for representing sensors stored in the database
+    /// </summary>
     public class Sensor
     {
         [XmlAttribute("Address")]
@@ -28,6 +31,18 @@ namespace User_App
         [XmlAttribute("Description")]
         public string Description { get; set; }
 
+        /// <summary>
+        /// Constructor for the sensor class
+        /// </summary>
+        /// <param name="newID">ID of the sensor in the database</param>
+        /// <param name="newAddress">IP adderss of the sensor</param>
+        /// <param name="newPort">network port of the sensor</param>
+        /// <param name="newRegister">register of the sensor</param>
+        /// <param name="newSensorType">type of sensor</param>
+        /// <param name="newScale">sensor scale</param>
+        /// <param name="newOffset">sensor offset</param>
+        /// <param name="newChamberID">ID of the chamber the sensor belongs to</param>
+        /// <param name="newDescription">Description (name) of the sensor</param>
         public Sensor(int newID, String newAddress, int newPort, int newRegister, int newSensorType, double newScale, double newOffset, int newChamberID, string newDescription)
         {
             ID = newID;
@@ -41,6 +56,9 @@ namespace User_App
             Description = newDescription;
         }
 
+        /// <summary>
+        /// Blank constructor used by XML serialiser
+        /// </summary>
         public Sensor()
         {
             //for serialization only

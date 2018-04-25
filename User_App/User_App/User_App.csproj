@@ -53,7 +53,6 @@
     <Compile Include="ChamberForm.Designer.cs">
       <DependentUpon>ChamberForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="ComboboxItem.cs" />
     <Compile Include="DeleteForm.cs">
       <SubType>Form</SubType>
     </Compile>

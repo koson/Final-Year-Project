@@ -7,6 +7,9 @@ using System.Xml.Serialization;
 
 namespace User_App
 {
+    /// <summary>
+    /// Class to represent individual data records from the database
+    /// </summary>
     public class DataItem
     {
         [XmlAttribute("ID")]
@@ -20,6 +23,14 @@ namespace User_App
         [XmlAttribute("SensorID")]
         private int SensorID { get; set; }
 
+        /// <summary>
+        /// Class constructor
+        /// </summary>
+        /// <param name="newID">ID of the data record</param>
+        /// <param name="newReading">sensor reading </param>
+        /// <param name="newRegValue">raw sensor register value</param>
+        /// <param name="newTimestamp">timestamp of data record</param>
+        /// <param name="newSensorID">ID of the sensor which collected this data</param>
         public DataItem(int newID, double newReading, double newRegValue, DateTime newTimestamp, int newSensorID)
         {
             ID = newID;
@@ -29,12 +40,20 @@ namespace User_App
             SensorID = newSensorID;
         }
 
+        /// <summary>
+        /// Alternate constructor
+        /// </summary>
+        /// <param name="newReading">sensor reading</param>
+        /// <param name="newTimestamp">record timestamp</param>
         public DataItem(double newReading, DateTime newTimestamp)
         {
             Reading = newReading;
             Timestamp = newTimestamp;
         }
 
+        /// <summary>
+        /// Blank constructor used for XML serialisation
+        /// </summary>
         public DataItem()
         {
             //for serialization only

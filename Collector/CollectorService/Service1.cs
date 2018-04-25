@@ -16,6 +16,9 @@ using System.Configuration;
 
 namespace CollectorService
 {
+    /// <summary>
+    /// Main windows service for collecting data from sensors
+    /// </summary>
     public partial class Service1 : ServiceBase
     {
         [DllImport("advapi32.dll", SetLastError = true)]
@@ -31,6 +34,11 @@ namespace CollectorService
         private int sensorPollInterval;
         private Sensor[] sensors;
         private System.Timers.Timer pollTimer;
+
+        /// <summary>
+        /// Constructor. initialises components and sets up event log reporting
+        /// </summary>
+        /// <param name="args">aruments passed to the service at startup (unused)</param>
         public Service1(string[] args)
         {
             InitializeComponent();
@@ -44,12 +52,24 @@ namespace CollectorService
             eventLog.Source = "Sensorcom";
             eventLog.Log = "Sensorcom";
         }
+
+        /// <summary>
+        /// Main method for starting the service
+        /// </summary>
+        /// <param name="args"></param>
         static void Main(string[] args)
         {
             ServiceBase[] ServicesToRun = new ServiceBase[] { new Service1(args) };
             ServiceBase.Run(ServicesToRun);
         }
 
+        /// <summary>
+        /// Method called when service is started.
+        /// sensor config read from database.
+        /// timer initialised to call sensor polling method when elapsed.
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
         protected override void OnStart(string[] args)
         {
             ServiceStatus serviceStatus = new ServiceStatus();
@@ -65,6 +85,10 @@ namespace CollectorService
             WhileRunning();
         }
 
+        /// <summary>
+        /// Method called when service is stopped.
+        /// sensor polling timer stopped before service is stopped
+        /// </summary>
         protected override void OnStop()
         {
             ServiceStatus serviceStatus = new ServiceStatus();
@@ -78,6 +102,11 @@ namespace CollectorService
             SetServiceStatus(this.ServiceHandle, ref serviceStatus);
         }
 
+        /// <summary>
+        /// Polls all sensors when timer elapses
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
         public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
             Task[] tasks = new Task[sensors.Length];
@@ -93,6 +122,10 @@ namespace CollectorService
             Task.WaitAll(tasks);
         }
 
+        /// <summary>
+        /// Method executed when service status changes to running.
+        ///poll timer started here
+        /// </summary>
         public void WhileRunning()
         {
             ServiceStatus serviceStatus = new ServiceStatus();
@@ -102,6 +135,10 @@ namespace CollectorService
             pollTimer.Start();
             pollTimer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnTimer);
         }
+
+        /// <summary>
+        /// Different service states
+        /// </summary>
         public enum ServiceState
         {
             SERVICE_STOPPED = 0x00000001,
@@ -113,6 +150,9 @@ namespace CollectorService
             SERVICE_PAUSED = 0x00000007,
         }
 
+        /// <summary>
+        /// object to represent service status
+        /// </summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct ServiceStatus
         {
@@ -125,6 +165,10 @@ namespace CollectorService
             public int dwWaitHint;
         };
 
+        /// <summary>
+        /// Method for wrapping whole sensor communication process
+        /// </summary>
+        /// <param name="sensor">the sensor to collect data for</param>
         void PollModbusSensor(Sensor sensor)
         {
             var result = ReadModbusSensor(sensor);
@@ -134,6 +178,11 @@ namespace CollectorService
             }
         }
 
+        /// <summary>
+        /// Method for receiving data from a sensor
+        /// </summary>
+        /// <param name="sensor">sensor to communicate with</param>
+        /// <returns>returns tuple containing register value, sensor reading and timestamp of data</returns>
         Tuple<double, double, String> ReadModbusSensor(Sensor sensor) //tuple allows to return multiple values
         {
             byte[] rawData = RequestData(sensor);
@@ -148,6 +197,11 @@ namespace CollectorService
             return null;
         }
 
+        /// <summary>
+        /// Calculates register value based off raw TCP data received
+        /// </summary>
+        /// <param name="rawData">raw TCP data received from sensor</param>
+        /// <returns>returns register value as double</returns>
         public double CalculateRegisterValue(byte[] rawData)
         { //calculates register value based off of bits in packet (uses little endian)
             ushort regValue;
@@ -164,6 +218,12 @@ namespace CollectorService
             return voltage;
         }*/
 
+            /// <summary>
+            /// Calculates sensor reading based on sensor type
+            /// </summary>
+            /// <param name="regValue">calculated register value</param>
+            /// <param name="sensor">sensor to calculate reading for</param>
+            /// <returns>sensor reading</returns>
         public double GetSensorReading(double regValue, Sensor sensor)
         {
             double reading = 0;
@@ -184,6 +244,13 @@ namespace CollectorService
             return reading;
         }
 
+        /// <summary>
+        /// Calculates humidity value based on register value, sensor scale and sensor offset
+        /// </summary>
+        /// <param name="regValue">calculated register value</param>
+        /// <param name="scale">sensor scale</param>
+        /// <param name="offset">sensor offset</param>
+        /// <returns>returns humidity value as a double</returns>
         public double CalculateHumidity(double regValue, double scale, double offset)
         {
             //(regValue * scale) + offset
@@ -191,6 +258,13 @@ namespace CollectorService
             return humidity;
         }
 
+        /// <summary>
+        /// Calculates pressure value based on register value, sensor scale and sensor offset
+        /// </summary>
+        /// <param name="regValue">calculated register value</param>
+        /// <param name="scale">sensor scale</param>
+        /// <param name="offset">sensor offset</param>
+        /// <returns>returns pressure value as a double</returns>
         public double CalculatePressure(double regValue, double scale, double offset)
         {
             //(regValue * scale) + offset
@@ -198,12 +272,23 @@ namespace CollectorService
             return pressure;
         }
 
+        /// <summary>
+        /// Calculates temperature reading by dividing register value by 10
+        /// </summary>
+        /// <param name="regValue">calculated register value</param>
+        /// <returns>temperature reading as a double</returns>
         public double CalculateTemperature(double regValue)
         {
             double temperature = regValue/10;
             return temperature;
         }
 
+        /// <summary>
+        /// Method to send a TCP message to a sensor and receive the reply
+        /// message constructed according to the modbus application protocol
+        /// </summary>
+        /// <param name="sensor">sensor to communicate with</param>
+        /// <returns>raw TCP response as byte array</returns>
         public byte[] RequestData(Sensor sensor)
         { //sends request to a modmux device. returns modmux response
             byte upperTransIdentifier = 0b0;
@@ -238,6 +323,10 @@ namespace CollectorService
             return null;
         }
 
+        /// <summary>
+        /// Method for reading all active sensors from the database
+        /// </summary>
+        /// <returns>Array of sensor objects</returns>
         public Sensor[] ReadSensorConfig()
         { //reads configuration from the sensors table in the DB
              List<Sensor> sensors = new List<Sensor>();
@@ -297,6 +386,9 @@ namespace CollectorService
             return sensorArray;
         }
 
+        /// <summary>
+        /// Reads general configuration (database connection details, poll interval, etc) from app.config
+        /// </summary>
         public void ReadGeneralConfig()
         {
             try
@@ -320,6 +412,11 @@ namespace CollectorService
             eventLog.WriteEntry("successfully read general configuration", EventLogEntryType.Information, eventID++);
         }
 
+        /// <summary>
+        /// Sends sensor reading to database
+        /// </summary>
+        /// <param name="sensor">the sensor object the reading was collected from</param>
+        /// <param name="result">the reading, register value and timestamp of the collected data</param>
         public void SendToDatabase(Sensor sensor, Tuple<double, double, String> result)
         {
             string connectionString = "Data Source =" + databaseHost + "; Initial Catalog =" + databaseName + "; User ID ="
@@ -345,6 +442,9 @@ namespace CollectorService
             }
         }
 
+        /// <summary>
+        /// Used in unit tests
+        /// </summary>
         public void SetValidGeneralConfigForTesting()
         {
             databaseHost = "169.254.121.230";
@@ -355,6 +455,9 @@ namespace CollectorService
             sensorPollInterval = 1000;
         }
 
+        /// <summary>
+        /// Used in unit testing
+        /// </summary>
         public void SetInvalidGeneralConfigForTesting()
         {
             databaseHost = "169.21.230";
